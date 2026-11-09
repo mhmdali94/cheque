@@ -16,18 +16,25 @@ export const TOSHIBA_PROFILE: PrinterProfile = {
   updatedAt: 0,
 };
 
+const PERSONAL_TEMPLATE_ID = 'tpl-alex-personal';
+/** لازم الشيك الشخصي يطابق الإسكندرية حتى لو نسخة قديمة منه اتحفظت كمضبوطة، مرة واحدة بس. */
+const PERSONAL_RESET_KEY = 'reset:tpl-alex-personal:1';
+
 /** يضيف الجاهز الناقص ويحدّث اللي المحاسب ما عدّلوش، ولا يكتب فوق أي قالب مضبوط. */
 export async function ensureSeeded(database: ShikatyDB = db): Promise<void> {
-  await database.transaction('rw', database.templates, database.printerProfiles, async () => {
+  await database.transaction('rw', database.templates, database.printerProfiles, database.settings, async () => {
     const templates = builtinTemplates();
+    const personalReset = Boolean(await database.settings.get(PERSONAL_RESET_KEY));
     const existing = await database.templates.bulkGet(templates.map((t) => t.id));
     await database.templates.bulkPut(
       templates.flatMap((template, index) => {
         const stored = existing[index];
         if (!stored) return [template];
-        return stored.accuracy === 'adjusted' ? [] : [{ ...template, imageId: stored.imageId }];
+        const forceRefresh = template.id === PERSONAL_TEMPLATE_ID && !personalReset;
+        return stored.accuracy === 'adjusted' && !forceRefresh ? [] : [{ ...template, imageId: stored.imageId }];
       }),
     );
+    if (!personalReset) await database.settings.put({ key: PERSONAL_RESET_KEY, value: true });
     if (!(await database.printerProfiles.get(TOSHIBA_PROFILE_ID))) {
       await database.printerProfiles.add(TOSHIBA_PROFILE);
     }

@@ -88,16 +88,6 @@ const ALEX: ChequeMeasurements = {
   micrTop: 77,
 };
 
-/** نفس تخطيط الإسكندرية، والتاريخ مقاس على الشيك الشخصي. */
-const ALEX_PERSONAL: ChequeMeasurements = {
-  ...ALEX,
-  dateBoxMm: {
-    ...ALEX.dateBoxMm!,
-    fromRight: ALEX.dateBoxMm!.fromRight - 1,
-    baselineY: ALEX.dateBoxMm!.baselineY + 1,
-  },
-};
-
 const round = (value: number) => Math.round(value * 100) / 100;
 
 function textField(m: ChequeMeasurements, range: Range, sizePt: number, extra: Partial<TextField> = {}): TextField {
@@ -208,7 +198,8 @@ export function builtinTemplates(): ChequeTemplate[] {
     buildTemplate('tpl-ahly-3', BANK_AHLY, 'نموذج ٣', AHLY, 'unmeasured'),
     buildTemplate('tpl-ahly-platinum', BANK_AHLY, 'بلاتيني', AHLY, 'unmeasured'),
     buildTemplate('tpl-alex-1', BANK_ALEX, 'نموذج ١ (خاص)', ALEX, 'approximate'),
-    buildTemplate('tpl-alex-personal', BANK_ALEX_PERSONAL, 'نموذج ١', ALEX_PERSONAL, 'approximate'),
+    // نسخة مطابقة تماماً لقالب الإسكندرية.
+    buildTemplate('tpl-alex-personal', BANK_ALEX_PERSONAL, 'نموذج ١', ALEX, 'approximate'),
     buildTemplate('tpl-alex-2', BANK_ALEX, 'نموذج ٢', ALEX, 'unmeasured'),
   ];
 }

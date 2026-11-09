@@ -131,19 +131,20 @@ describe('القوالب الجاهزة', () => {
     });
   });
 
-  it('شيك الإسكندرية الشخصي: التاريخ بس هو المختلف', () => {
+  it('شيك الإسكندرية الشخصي نسخة مطابقة تماماً', () => {
     const personal = templates.find((t) => t.id === 'tpl-alex-personal')!;
     expect(personal.bankName).toBe('بنك الإسكندرية (شخصي)');
-    expect(personal.bankName).not.toBe(alex.bankName);
     expect(personal.modelName).toBe('نموذج ١');
-    const positions = ({ id: _id, name: _name, bankName: _bank, modelName: _model, date: _date, ...rest }: ChequeTemplate) => rest;
+    const positions = ({ id: _id, name: _name, bankName: _bank, modelName: _model, ...rest }: ChequeTemplate) => rest;
     expect(positions(personal)).toEqual(positions(alex));
+  });
 
-    expect(personal.date.x).toBeCloseTo(alex.date.x + 1, 2);
-    expect(personal.date.y).toBeCloseTo(alex.date.y + 1, 2);
-    expect(personal.date.w).toBe(alex.date.w);
-    expect(personal.date.h).toBe(alex.date.h);
-    expect(personal.date.firstCellCenterX).toBeCloseTo(alex.date.firstCellCenterX + 1, 2);
+  it('طباعة الشخصي بنفس أماكن الإسكندرية بالظبط', () => {
+    const personal = templates.find((t) => t.id === 'tpl-alex-personal')!;
+    const { rules: a, texts: b } = texts(personal, { signatoryName: 'أحمد', crossing: { kind: 'firstBeneficiary', text: '', drawLines: false } });
+    const { rules: c, texts: d } = texts(alex, { signatoryName: 'أحمد', crossing: { kind: 'firstBeneficiary', text: '', drawLines: false } });
+    expect(b).toEqual(d);
+    expect(a).toEqual(c);
   });
 
   it('قيم الأهلي النهائية ما اتغيرتش', () => {

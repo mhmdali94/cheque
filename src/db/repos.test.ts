@@ -70,4 +70,20 @@ describe('تحديث القوالب الجاهزة', () => {
     await ensureSeeded(database);
     expect((await database.templates.get(id))!.amountWords.line1.w).toBe(1);
   });
+
+  it('نسخة الشيك الشخصي المحفوظة تتصلح مرة واحدة وبعدها تعديلات المحاسب تفضل', async () => {
+    const personalId = 'tpl-alex-personal';
+    await ensureSeeded(database);
+    const original = (await database.templates.get(personalId))!;
+    await database.settings.delete('reset:tpl-alex-personal:1');
+    const stale = { ...original, accuracy: 'adjusted' as const, date: { ...original.date, x: 1 } };
+    await database.templates.put(stale);
+
+    await ensureSeeded(database);
+    expect((await database.templates.get(personalId))!.date.x).toBe(original.date.x);
+
+    await database.templates.put(stale);
+    await ensureSeeded(database);
+    expect((await database.templates.get(personalId))!.date.x).toBe(1);
+  });
 });
