@@ -87,24 +87,48 @@ describe('القوالب الجاهزة', () => {
     expect(fill.x2).toBeLessThan(ahly.amountDigits.x);
   });
 
-  it('مبالغ الإسكندرية ما اتغيرتش', () => {
-    const { x, w } = alex.amountWords.line2;
-    expect(alex.lengthMm - (x + w)).toBeCloseTo(175 * 0.2, 1);
-    expect(alex.amountDigits.y).toBeCloseTo(84 * 0.42 - 5.5, 1);
-    expect(alex.amountDigits.fontSizePt).toBe(12);
-    expect(alex.signatoryName.y).toBeCloseTo(84 * 0.54 - 5.5, 1);
-    expect(alex.amountWords.line1.y).toBeCloseTo(84 * 0.42 - 5.5, 1);
-    expect(alex.amountWords.line2.y).toBeCloseTo(84 * 0.51 - 5.5, 1);
+  describe.each(templates.filter((t) => t.bankName === alex.bankName).map((t) => [t.name, t] as const))('%s منسوخ من الأهلي', (_name, t) => {
+    const fromRight = (f: { x: number; w: number }) => t.lengthMm - (f.x + f.w);
+    const ahlyFromRight = (f: { x: number; w: number }) => ahly.lengthMm - (f.x + f.w);
+
+    it('التاريخ ١ مم لتحت و٣ مم يمين', () => {
+      expect(fromRight(t.date)).toBeCloseTo(ahlyFromRight(ahly.date) - 3, 1);
+      expect(t.date.w).toBe(32.5);
+      expect(t.date.h).toBe(6);
+      expect(t.date.y).toBeCloseTo(ahly.date.y + 1, 1);
+    });
+
+    it('المبلغ بالأرقام ٢ مم لتحت و٢ مم يمين وبنفس الخط', () => {
+      expect(fromRight(t.amountDigits)).toBeCloseTo(ahlyFromRight(ahly.amountDigits) - 2, 1);
+      expect(t.amountDigits.w).toBeCloseTo(ahly.amountDigits.w, 1);
+      expect(t.amountDigits.y).toBeCloseTo(ahly.amountDigits.y + 2, 1);
+      expect(t.amountDigits.fontSizePt).toBe(14);
+    });
+
+    it('الباقي زي الأهلي بالمليمتر من اليمين ومن فوق', () => {
+      const pairs = [
+        [t.payee, ahly.payee], [t.amountWords.line1, ahly.amountWords.line1],
+        [t.amountWords.line2, ahly.amountWords.line2], [t.signatoryName, ahly.signatoryName],
+      ];
+      for (const [mine, theirs] of pairs) {
+        expect(fromRight(mine)).toBeCloseTo(ahlyFromRight(theirs), 1);
+        expect(mine.w).toBeCloseTo(theirs.w, 1);
+        expect(mine.y).toBeCloseTo(theirs.y, 1);
+      }
+    });
+
+    it('خط الترميز والتسطير والتوقيع بتوع شيك الإسكندرية', () => {
+      expect(t.micrLineY).toBeCloseTo(84 * 0.77, 1);
+      expect(t.crossingGuide.x).toBeCloseTo(175 * 0.52, 1);
+      expect(t.signatureBox.y).toBeCloseTo(84 * 0.62, 1);
+    });
   });
 
-  it('مستفيد الإسكندرية ما اتغيرش', () => {
-    expect(alex.lengthMm - (alex.payee.x + alex.payee.w)).toBeCloseTo(175 * 0.06, 1);
-  });
-
-  it('تاريخ الإسكندرية ما اتغيرش', () => {
-    expect(alex.date.w).toBeCloseTo(175 * 0.17, 2);
-    expect(alex.lengthMm - (alex.date.x + alex.date.w)).toBeCloseTo(175 * 0.09, 2);
-    expect(alex.date.h).toBe(6.5);
+  it('قيم الأهلي النهائية ما اتغيرتش', () => {
+    expect(ahly.lengthMm - (ahly.date.x + ahly.date.w)).toBeCloseTo(12, 2);
+    expect(ahly.date.y + ahly.date.h * 0.74).toBeCloseTo(8.55, 1);
+    expect(ahly.amountDigits.y).toBeCloseTo(35.1, 1);
+    expect(ahly.signatoryName.y).toBeCloseTo(47.42, 1);
   });
 
   it('الخانات الثماني داخل مربع التاريخ', () => {

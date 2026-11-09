@@ -52,15 +52,37 @@ const AHLY: ChequeMeasurements = {
   micrTop: 81,
 };
 
+/** نفس المكان بالمليمتر من الحافة اليمنى، على شيك الإسكندرية الأطول ١ مم. */
+const ALEX_LENGTH_MM = 175;
+const asAlex = (range: Range): Range => ({
+  top: range.top,
+  from: (range.from * AHLY.lengthMm) / ALEX_LENGTH_MM,
+  to: (range.to * AHLY.lengthMm) / ALEX_LENGTH_MM,
+});
+
+/** تخطيط الأهلي بتعديلات مقاسة على شيك الإسكندرية، مع الاحتفاظ بأماكنه المطبوعة مسبقاً. */
+const ALEX_DIGITS_RIGHT_SHIFT_PERCENT = (2 / ALEX_LENGTH_MM) * 100;
+const ALEX_DIGITS = asAlex(AHLY.digits);
+
 const ALEX: ChequeMeasurements = {
-  lengthMm: 175,
+  lengthMm: ALEX_LENGTH_MM,
   widthMm: 84,
   date: { top: 14, from: 9, to: 26 },
-  payee: { top: 32, from: 6, to: 70 },
-  words1: { top: 42, from: wordsStartPercent(175), to: 85 },
-  words2: { top: 51, from: 20, to: 85 },
-  digits: { top: 42, from: 5, to: 22 },
-  name: { top: 54, from: 10, to: 45 },
+  dateBoxMm: {
+    ...AHLY.dateBoxMm!,
+    fromRight: AHLY.dateBoxMm!.fromRight - 3,
+    baselineY: AHLY.dateBoxMm!.baselineY + 1,
+  },
+  payee: asAlex(AHLY.payee),
+  words1: asAlex(AHLY.words1),
+  words2: asAlex(AHLY.words2),
+  digits: {
+    top: ALEX_DIGITS.top + (2 / 84) * 100,
+    from: ALEX_DIGITS.from - ALEX_DIGITS_RIGHT_SHIFT_PERCENT,
+    to: ALEX_DIGITS.to - ALEX_DIGITS_RIGHT_SHIFT_PERCENT,
+  },
+  digitsFontPt: AHLY.digitsFontPt,
+  name: asAlex(AHLY.name),
   signature: { topFrom: 62, topTo: 72, from: 10, to: 45 },
   crossing: { topFrom: 5, topTo: 18, from: 39, to: 48 },
   micrTop: 77,
