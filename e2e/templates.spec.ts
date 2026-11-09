@@ -63,3 +63,12 @@ test('تصدير القالب ثم استيراده', async ({ page }) => {
   await page.getByLabel('ملف القالب').setInputFiles({ name: 'bad.json', mimeType: 'application/json', buffer: Buffer.from('{"kind":"x"}') });
   await expect(page.getByText('الملف ده مش قالب شيكاتي صالح')).toBeVisible();
 });
+
+test('بنك الإسكندرية الشخصي بنك مستقل في القوائم', async ({ page }) => {
+  await completeSetup(page);
+  await page.getByRole('link', { name: 'الشركات والدفاتر' }).click();
+  const bank = page.getByLabel('البنك', { exact: true });
+  await expect(bank.locator('option', { hasText: 'بنك الإسكندرية (شخصي)' })).toHaveCount(1);
+  await bank.selectOption('بنك الإسكندرية (شخصي)');
+  await expect(page.getByLabel('نموذج الشيك').locator('option')).toHaveText(['نموذج ١']);
+});

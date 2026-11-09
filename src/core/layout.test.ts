@@ -133,9 +133,10 @@ describe('القوالب الجاهزة', () => {
 
   it('شيك الإسكندرية الشخصي: التاريخ بس هو المختلف', () => {
     const personal = templates.find((t) => t.id === 'tpl-alex-personal')!;
-    expect(personal.bankName).toBe(alex.bankName);
-    expect(personal.modelName).toBe('شخصي');
-    const positions = ({ id: _id, name: _name, modelName: _model, date: _date, ...rest }: ChequeTemplate) => rest;
+    expect(personal.bankName).toBe('بنك الإسكندرية (شخصي)');
+    expect(personal.bankName).not.toBe(alex.bankName);
+    expect(personal.modelName).toBe('نموذج ١');
+    const positions = ({ id: _id, name: _name, bankName: _bank, modelName: _model, date: _date, ...rest }: ChequeTemplate) => rest;
     expect(positions(personal)).toEqual(positions(alex));
 
     expect(personal.date.x).toBeCloseTo(alex.date.x + 1, 2);

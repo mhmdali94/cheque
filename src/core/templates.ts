@@ -197,6 +197,7 @@ function buildTemplate(
 
 export const BANK_AHLY = 'البنك الأهلي المصري';
 export const BANK_ALEX = 'بنك الإسكندرية';
+export const BANK_ALEX_PERSONAL = 'بنك الإسكندرية (شخصي)';
 
 /** أماكن الحقول في النماذج غير المقاسة منسوخة من النموذج المقاس لنفس البنك. */
 export function builtinTemplates(): ChequeTemplate[] {
@@ -207,7 +208,7 @@ export function builtinTemplates(): ChequeTemplate[] {
     buildTemplate('tpl-ahly-3', BANK_AHLY, 'نموذج ٣', AHLY, 'unmeasured'),
     buildTemplate('tpl-ahly-platinum', BANK_AHLY, 'بلاتيني', AHLY, 'unmeasured'),
     buildTemplate('tpl-alex-1', BANK_ALEX, 'نموذج ١ (خاص)', ALEX, 'approximate'),
-    buildTemplate('tpl-alex-personal', BANK_ALEX, 'شخصي', ALEX_PERSONAL, 'approximate'),
+    buildTemplate('tpl-alex-personal', BANK_ALEX_PERSONAL, 'نموذج ١', ALEX_PERSONAL, 'approximate'),
     buildTemplate('tpl-alex-2', BANK_ALEX, 'نموذج ٢', ALEX, 'unmeasured'),
   ];
 }
@@ -221,6 +222,7 @@ export const ACCURACY_LABEL: Record<TemplateAccuracy, string> = {
 export const BANK_TINT: Record<string, string> = {
   [BANK_AHLY]: 'oklch(0.94 0.03 150)',
   [BANK_ALEX]: 'oklch(0.94 0.03 240)',
+  [BANK_ALEX_PERSONAL]: 'oklch(0.94 0.03 240)',
 };
 
 export const DEFAULT_BANK_TINT = 'oklch(0.95 0.015 85)';
