@@ -66,7 +66,7 @@ describe('القوالب الجاهزة', () => {
     expect(x + w).toBeLessThan(t.amountDigits.x);
     expect(t.amountDigits.y).toBeCloseTo(84 * 0.45 - 5.5 + 2.8, 1);
     expect(t.amountDigits.fontSizePt).toBe(14);
-    expect(t.signatoryName.y).toBeCloseTo(84 * 0.63 - 5.5 - 1, 1);
+    expect(t.signatoryName.y).toBeCloseTo(84 * 0.63 - 5.5, 1);
     expect(t.amountWords.line1.y).toBeCloseTo(84 * 0.4 - 5.5 + 3, 1);
     expect(t.amountWords.line2.y).toBeCloseTo(84 * 0.51 - 5.5 + 3, 1);
     // المربعان متلامسان، والمهم إن سطور الكتابة نفسها متباعدة بما يكفي الحروف

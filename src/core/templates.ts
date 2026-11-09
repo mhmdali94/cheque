@@ -46,7 +46,7 @@ const AHLY: ChequeMeasurements = {
   words2: { top: 51 + (3 / 84) * 100, from: (50 / 174) * 100, to: 85 },
   digits: { top: 45 + (2.8 / 84) * 100, from: 4, to: 20 },
   digitsFontPt: 14,
-  name: { top: 63 - (1 / 84) * 100, from: 10, to: 45 },
+  name: { top: 63, from: 10, to: 45 },
   signature: { topFrom: 70, topTo: 80, from: 10, to: 45 },
   crossing: { topFrom: 5, topTo: 20, from: 71, to: 79 },
   micrTop: 81,
