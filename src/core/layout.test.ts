@@ -39,7 +39,7 @@ describe('القوالب الجاهزة', () => {
   });
 
   it.each(templates.filter((t) => t.bankName === ahly.bankName).map((t) => [t.name, t] as const))('%s: مربع التاريخ بالمقاس الفعلي', (_name, t) => {
-    expect(t.lengthMm - (t.date.x + t.date.w)).toBeCloseTo(14, 2);
+    expect(t.lengthMm - (t.date.x + t.date.w)).toBeCloseTo(11, 2);
     expect(t.date.w).toBe(32.5);
     expect(t.date.h).toBe(6);
     expect(t.date.cellPitch).toBeCloseTo(32.5 / 8, 6);
