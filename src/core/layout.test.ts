@@ -39,12 +39,11 @@ describe('القوالب الجاهزة', () => {
   });
 
   it.each(templates.filter((t) => t.bankName === ahly.bankName).map((t) => [t.name, t] as const))('%s: مربع التاريخ بالمقاس الفعلي', (_name, t) => {
-    expect(t.lengthMm - (t.date.x + t.date.w)).toBeCloseTo(17, 2);
+    expect(t.lengthMm - (t.date.x + t.date.w)).toBeCloseTo(18, 2);
     expect(t.date.w).toBe(32.5);
     expect(t.date.h).toBe(6);
     expect(t.date.cellPitch).toBeCloseTo(32.5 / 8, 6);
-    // خط الكتابة نزل مليمتر عن مكانه القديم (٨٫٥٥)
-    expect(t.date.y + t.date.h * 0.74).toBeCloseTo(9.55, 1);
+    expect(t.date.y + t.date.h * 0.74).toBeCloseTo(8.55, 1);
   });
 
   it('خانات تاريخ الأهلي متوسطة في المربع', () => {
@@ -59,6 +58,25 @@ describe('القوالب الجاهزة', () => {
     expect(t.lengthMm - (t.payee.x + t.payee.w)).toBeCloseTo(40, 1);
     expect(t.payee.y).toBeCloseTo(84 * 0.27 - 5.5 + 5, 1);
     expect(t.payee.y + t.payee.h).toBeLessThanOrEqual(t.micrLineY);
+  });
+
+  it.each(templates.filter((t) => t.bankName === ahly.bankName).map((t) => [t.name, t] as const))('%s: سطر التفقيط التاني بعيد عن خانة المبلغ', (_name, t) => {
+    const { x, w } = t.amountWords.line2;
+    expect(t.lengthMm - (x + w)).toBeCloseTo(50, 1);
+    expect(x + w).toBeLessThan(t.amountDigits.x);
+    expect(t.amountDigits.y).toBeCloseTo(84 * 0.45 - 5.5 + 0.3, 1);
+  });
+
+  it('خط السطر التاني ما يوصلش لخانة المبلغ حتى لو السطر فاضي', () => {
+    const fill = texts(ahly, { amount: 900000 }).rules.find((r) => r.field === 'amountWords2')!;
+    expect(ahly.lengthMm - fill.x2).toBeCloseTo(50, 0);
+    expect(fill.x2).toBeLessThan(ahly.amountDigits.x);
+  });
+
+  it('مبالغ الإسكندرية ما اتغيرتش', () => {
+    const { x, w } = alex.amountWords.line2;
+    expect(alex.lengthMm - (x + w)).toBeCloseTo(175 * 0.2, 1);
+    expect(alex.amountDigits.y).toBeCloseTo(84 * 0.42 - 5.5, 1);
   });
 
   it('مستفيد الإسكندرية ما اتغيرش', () => {

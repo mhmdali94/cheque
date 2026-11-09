@@ -37,12 +37,13 @@ const AHLY: ChequeMeasurements = {
   lengthMm: 174,
   widthMm: 84,
   date: { top: 11, from: 10, to: 28 },
-  dateBoxMm: { fromRight: 17, width: 32.5, height: 6, baselineY: 9.55 },
+  dateBoxMm: { fromRight: 18, width: 32.5, height: 6, baselineY: 8.55 },
   // مقاس بالتجربة: ٥ مم تحت النسبة الأصلية، والبداية ٤٠ مم من الحافة اليمنى.
   payee: { top: 27 + (5 / 84) * 100, from: (40 / 174) * 100, to: 75 },
   words1: { top: 40, from: wordsStartPercent(174), to: 85 },
-  words2: { top: 51, from: 10, to: 85 },
-  digits: { top: 45, from: 4, to: 20 },
+  // السطر التاني بيبدأ ٥٠ مم من اليمين عشان خطه ما يدخلش تحت خانة المبلغ بالأرقام.
+  words2: { top: 51, from: (50 / 174) * 100, to: 85 },
+  digits: { top: 45 + (0.3 / 84) * 100, from: 4, to: 20 },
   name: { top: 63, from: 10, to: 45 },
   signature: { topFrom: 70, topTo: 80, from: 10, to: 45 },
   crossing: { topFrom: 5, topTo: 20, from: 71, to: 79 },
