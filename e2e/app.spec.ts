@@ -93,10 +93,15 @@ test('اختصار البحث والمسار غير الموجود', async ({ pa
   await expect(page.getByRole('img', { name: 'معاينة الشيك' })).toBeVisible();
 });
 
-test('فشل ملف التشكيل ما يوقعش التطبيق', async ({ page }) => {
-  await page.route('**/*.wasm', (route) => route.fulfill({ status: 404, body: '' }));
-  await completeSetup(page);
-  await expect(page.getByText('تعذر تحميل خط الشيك. أعد فتح الصفحة.')).toBeVisible();
+test.describe('بدون ملفات مخزنة', () => {
+  // خادم الخدمة بيجيب الملف من مخزنه، فالحجب هنا كان بيعتمد على مين يسبق.
+  test.use({ serviceWorkers: 'block' });
+
+  test('فشل ملف التشكيل ما يوقعش التطبيق', async ({ page }) => {
+    await page.route('**/*.wasm', (route) => route.fulfill({ status: 404, body: '' }));
+    await completeSetup(page);
+    await expect(page.getByText('تعذر تحميل خط الشيك. أعد فتح الصفحة.')).toBeVisible();
+  });
 });
 
 test('مخزن البيانات المحجوب يعرض رسالة بدل صفحة بيضا', async ({ page }) => {

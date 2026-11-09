@@ -91,8 +91,8 @@ describe('القوالب الجاهزة', () => {
     const fromRight = (f: { x: number; w: number }) => t.lengthMm - (f.x + f.w);
     const ahlyFromRight = (f: { x: number; w: number }) => ahly.lengthMm - (f.x + f.w);
 
-    it('التاريخ يبدأ ٠٫٩ سم من اليمين و١ مم تحت الأهلي', () => {
-      expect(fromRight(t.date)).toBeCloseTo(9, 1);
+    it('التاريخ يبدأ ١ سم من اليمين و١ مم تحت الأهلي', () => {
+      expect(fromRight(t.date)).toBeCloseTo(10, 1);
       expect(t.date.w).toBe(32.5);
       expect(t.date.h).toBe(6);
       expect(t.date.y).toBeCloseTo(ahly.date.y + 1, 1);
@@ -106,8 +106,8 @@ describe('القوالب الجاهزة', () => {
     });
 
     it.each([
-      ['المستفيد', (x: ChequeTemplate) => x.payee, 0, 0],
-      ['سطر التفقيط الأول', (x: ChequeTemplate) => x.amountWords.line1, 10, -5],
+      ['المستفيد', (x: ChequeTemplate) => x.payee, 0, -1],
+      ['سطر التفقيط الأول', (x: ChequeTemplate) => x.amountWords.line1, 10, -3],
       ['سطر التفقيط التاني', (x: ChequeTemplate) => x.amountWords.line2, 10, -5],
       ['اسم المفوض', (x: ChequeTemplate) => x.signatoryName, 0, -2],
     ] as const)('%s بالإزاحة المطلوبة', (_label, field, left, down) => {

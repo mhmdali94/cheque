@@ -73,12 +73,12 @@ const ALEX: ChequeMeasurements = {
   date: { top: 14, from: 9, to: 26 },
   dateBoxMm: {
     ...AHLY.dateBoxMm!,
-    fromRight: AHLY.dateBoxMm!.fromRight - 3,
+    fromRight: AHLY.dateBoxMm!.fromRight - 2,
     baselineY: AHLY.dateBoxMm!.baselineY + 1,
   },
-  payee: asAlex(AHLY.payee),
+  payee: movedOnAlex(asAlex(AHLY.payee), 0, -1),
   // كل الإزاحات دي مقاسة بالتجربة على شيك الإسكندرية الفعلي.
-  words1: movedOnAlex(asAlex(AHLY.words1), 10, -5),
+  words1: movedOnAlex(asAlex(AHLY.words1), 10, -3),
   words2: movedOnAlex(asAlex(AHLY.words2), 10, -5),
   digits: movedOnAlex(asAlex(AHLY.digits), -2, -3),
   digitsFontPt: AHLY.digitsFontPt,
