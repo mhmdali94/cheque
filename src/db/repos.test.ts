@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import type { Cheque, ChequeBook } from '@/core/types';
 import { ShikatyDB } from './schema';
 import { getDeviceId, logAudit, nextChequeNumber, remainingInBook } from './repos';
+import { ensureSeeded } from './seed';
 
 const book: ChequeBook = {
   id: 'b1', companyId: 'c1', accountId: 'a1', fromNumber: 100, toNumber: 102, numberWidth: 6, createdAt: 0, updatedAt: 0,
@@ -46,5 +47,27 @@ describe('التخزين', () => {
     const [entry] = await database.auditLog.toArray();
     expect(entry).toMatchObject({ chequeId: 'x', action: 'print', accountant: 'سارة' });
     expect(entry.at).toBeGreaterThan(0);
+  });
+});
+
+describe('تحديث القوالب الجاهزة', () => {
+  const id = 'tpl-ahly-qr';
+
+  it('القالب اللي ما اتعدلش ياخد الأماكن الجديدة ويحتفظ بصورته', async () => {
+    await ensureSeeded(database);
+    const stored = (await database.templates.get(id))!;
+    await database.templates.put({ ...stored, imageId: 'img', amountWords: { ...stored.amountWords, line1: { ...stored.amountWords.line1, w: 1 } } });
+    await ensureSeeded(database);
+    const updated = (await database.templates.get(id))!;
+    expect(updated.amountWords.line1.w).toBe(stored.amountWords.line1.w);
+    expect(updated.imageId).toBe('img');
+  });
+
+  it('القالب المضبوط ما يتكتبش فوقه', async () => {
+    await ensureSeeded(database);
+    const stored = (await database.templates.get(id))!;
+    await database.templates.put({ ...stored, accuracy: 'adjusted', amountWords: { ...stored.amountWords, line1: { ...stored.amountWords.line1, w: 1 } } });
+    await ensureSeeded(database);
+    expect((await database.templates.get(id))!.amountWords.line1.w).toBe(1);
   });
 });

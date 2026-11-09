@@ -26,12 +26,16 @@ interface ChequeMeasurements {
   micrTop: number;
 }
 
+/** بداية السطر الأول من التفقيط، مقاسة بالتجربة على الشيك الفعلي، وواحدة لكل البنوك. */
+const WORDS_START_FROM_RIGHT_MM = 65;
+const wordsStartPercent = (lengthMm: number) => (WORDS_START_FROM_RIGHT_MM / lengthMm) * 100;
+
 const AHLY: ChequeMeasurements = {
   lengthMm: 174,
   widthMm: 84,
   date: { top: 11, from: 10, to: 28 },
   payee: { top: 27, from: 10, to: 75 },
-  words1: { top: 40, from: 22, to: 85 },
+  words1: { top: 40, from: wordsStartPercent(174), to: 85 },
   words2: { top: 51, from: 10, to: 85 },
   digits: { top: 45, from: 4, to: 20 },
   name: { top: 63, from: 10, to: 45 },
@@ -45,7 +49,7 @@ const ALEX: ChequeMeasurements = {
   widthMm: 84,
   date: { top: 14, from: 9, to: 26 },
   payee: { top: 32, from: 6, to: 70 },
-  words1: { top: 42, from: 22, to: 85 },
+  words1: { top: 42, from: wordsStartPercent(175), to: 85 },
   words2: { top: 51, from: 20, to: 85 },
   digits: { top: 42, from: 5, to: 22 },
   name: { top: 54, from: 10, to: 45 },

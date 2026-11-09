@@ -16,12 +16,18 @@ export const TOSHIBA_PROFILE: PrinterProfile = {
   updatedAt: 0,
 };
 
-/** يضيف الجاهز الناقص فقط، فلا يكتب فوق تعديلات المحاسب. */
+/** يضيف الجاهز الناقص ويحدّث اللي المحاسب ما عدّلوش، ولا يكتب فوق أي قالب مضبوط. */
 export async function ensureSeeded(database: ShikatyDB = db): Promise<void> {
   await database.transaction('rw', database.templates, database.printerProfiles, async () => {
     const templates = builtinTemplates();
-    const existing = new Set(await database.templates.bulkGet(templates.map((t) => t.id)).then((rows) => rows.filter(Boolean).map((t) => t!.id)));
-    await database.templates.bulkAdd(templates.filter((t) => !existing.has(t.id)));
+    const existing = await database.templates.bulkGet(templates.map((t) => t.id));
+    await database.templates.bulkPut(
+      templates.flatMap((template, index) => {
+        const stored = existing[index];
+        if (!stored) return [template];
+        return stored.accuracy === 'adjusted' ? [] : [{ ...template, imageId: stored.imageId }];
+      }),
+    );
     if (!(await database.printerProfiles.get(TOSHIBA_PROFILE_ID))) {
       await database.printerProfiles.add(TOSHIBA_PROFILE);
     }

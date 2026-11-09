@@ -33,6 +33,11 @@ describe('القوالب الجاهزة', () => {
     }
   });
 
+  it.each(templates.map((t) => [t.name, t] as const))('%s: التفقيط يبدأ على بعد ٦٥ مم من اليمين', (_name, t) => {
+    const { x, w } = t.amountWords.line1;
+    expect(t.lengthMm - (x + w)).toBeCloseTo(65, 1);
+  });
+
   it('الخانات الثماني داخل مربع التاريخ', () => {
     const lastCenter = ahly.date.firstCellCenterX + 7 * ahly.date.cellPitch;
     expect(ahly.date.firstCellCenterX).toBeGreaterThan(ahly.date.x);
