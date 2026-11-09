@@ -1,4 +1,5 @@
 /** القوالب الجاهزة، مبنية من النسب المقاسة على صور شيكات حقيقية (دقتها حوالي ±٣٪). */
+import { BASELINE_RATIO } from './layout';
 import type { Box, ChequeTemplate, TemplateAccuracy, TextField } from './types';
 
 /** ارتفاع مربع الحقل، وكم يعلو خط الكتابة المطبوع داخل المربع. */
@@ -16,6 +17,8 @@ interface ChequeMeasurements {
   lengthMm: number;
   widthMm: number;
   date: Range;
+  /** مقاس مربع التاريخ بالمسطرة على الشيك الفعلي، وله الأولوية على النسب. */
+  dateBoxMm?: { fromRight: number; width: number; height: number; baselineY: number };
   payee: Range;
   words1: Range;
   words2: Range;
@@ -34,6 +37,7 @@ const AHLY: ChequeMeasurements = {
   lengthMm: 174,
   widthMm: 84,
   date: { top: 11, from: 10, to: 28 },
+  dateBoxMm: { fromRight: 17, width: 32.5, height: 6, baselineY: 9.55 },
   payee: { top: 27, from: 10, to: 75 },
   words1: { top: 40, from: wordsStartPercent(174), to: 85 },
   words2: { top: 51, from: 10, to: 85 },
@@ -88,8 +92,18 @@ function regionBox(m: ChequeMeasurements, r: ChequeMeasurements['signature']): B
 function buildTemplate(
   id: string, bankName: string, modelName: string, m: ChequeMeasurements, accuracy: TemplateAccuracy,
 ): ChequeTemplate {
-  const dateBase = textField(m, m.date, 11, { align: 'center', bold: true });
-  const cellPitch = round(dateBase.w / 8);
+  const dateBox = m.dateBoxMm;
+  const dateBase = textField(m, m.date, 11, {
+    align: 'center', bold: true,
+    ...(dateBox && {
+      x: round(m.lengthMm - dateBox.fromRight - dateBox.width),
+      // موضع خط الكتابة هو الأساس، فالمربع يتحسب منه بنفس نسبة التخطيط.
+      y: round(dateBox.baselineY - dateBox.height * BASELINE_RATIO),
+      w: dateBox.width,
+      h: dateBox.height,
+    }),
+  });
+  const cellPitch = dateBase.w / 8;
   const guide = regionBox(m, m.crossing);
   const crossingLength = round(Math.hypot(guide.w, guide.h));
 
@@ -108,7 +122,7 @@ function buildTemplate(
     crossingGuide: guide,
     date: {
       ...dateBase, mode: 'cells',
-      firstCellCenterX: round(dateBase.x + cellPitch / 2),
+      firstCellCenterX: dateBase.x + cellPitch / 2,
       cellPitch,
       cellOrder: 'ltr',
     },

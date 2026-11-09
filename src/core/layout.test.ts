@@ -38,6 +38,29 @@ describe('القوالب الجاهزة', () => {
     expect(t.lengthMm - (x + w)).toBeCloseTo(65, 1);
   });
 
+  it.each(templates.filter((t) => t.bankName === ahly.bankName).map((t) => [t.name, t] as const))('%s: مربع التاريخ بالمقاس الفعلي', (_name, t) => {
+    expect(t.lengthMm - (t.date.x + t.date.w)).toBeCloseTo(17, 2);
+    expect(t.date.w).toBe(32.5);
+    expect(t.date.h).toBe(6);
+    expect(t.date.cellPitch).toBeCloseTo(32.5 / 8, 6);
+    // خط الكتابة نزل مليمتر عن مكانه القديم (٨٫٥٥)
+    expect(t.date.y + t.date.h * 0.74).toBeCloseTo(9.55, 1);
+  });
+
+  it('خانات تاريخ الأهلي متوسطة في المربع', () => {
+    const digits = texts(ahly).texts.filter((t) => t.field === 'date');
+    const firstCenter = digits[0].x + digits[0].widthMm / 2;
+    const lastCenter = digits[7].x + digits[7].widthMm / 2;
+    expect(firstCenter).toBeCloseTo(ahly.date.x + 32.5 / 16, 2);
+    expect(lastCenter).toBeCloseTo(ahly.date.x + 32.5 - 32.5 / 16, 2);
+  });
+
+  it('تاريخ الإسكندرية ما اتغيرش', () => {
+    expect(alex.date.w).toBeCloseTo(175 * 0.17, 2);
+    expect(alex.lengthMm - (alex.date.x + alex.date.w)).toBeCloseTo(175 * 0.09, 2);
+    expect(alex.date.h).toBe(6.5);
+  });
+
   it('الخانات الثماني داخل مربع التاريخ', () => {
     const lastCenter = ahly.date.firstCellCenterX + 7 * ahly.date.cellPitch;
     expect(ahly.date.firstCellCenterX).toBeGreaterThan(ahly.date.x);

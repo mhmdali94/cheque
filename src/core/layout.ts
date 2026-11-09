@@ -75,7 +75,7 @@ export interface ChequeValues {
 }
 
 /** خط الأساس بالنسبة لمربع الحقل، عشان نقط الحروف تفضل جوه المربع. */
-const BASELINE_RATIO = 0.74;
+export const BASELINE_RATIO = 0.74;
 const FONT_STEP = 0.25;
 const FILL_GAP_MM = 1.2;
 const FILL_RAISE_MM = 1;
