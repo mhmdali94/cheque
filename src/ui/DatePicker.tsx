@@ -100,7 +100,7 @@ export function DatePicker({ label, value, onChange }: DatePickerProps) {
         type="button" className={`${INPUT_CLASS} text-start tabular-nums`} aria-haspopup="dialog" aria-expanded={open}
         aria-labelledby={`${id}-label ${id}-value`} onClick={toggle}
       >
-        <span id={`${id}-value`} dir="ltr">{formatDate(value)}</span>
+        <span id={`${id}-value`} dir="ltr">{formatDate(value) || 'اختار'}</span>
       </button>
 
       {open && (

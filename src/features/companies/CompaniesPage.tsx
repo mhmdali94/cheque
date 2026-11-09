@@ -8,7 +8,7 @@ import { db } from '@/db/schema';
 import { useCurrentCompany } from '@/state/useAppData';
 import { Button, DigitInput, Notice, PageHeader, Select, TextInput } from '@/ui/controls';
 import { ColorPicker } from './ColorPicker';
-import { addAccount, addBook, addCompany, COMPANY_COLORS, formatChequeNumber, parseBookRange } from './data';
+import { addAccount, addBook, addCompany, COMPANY_COLORS, formatChequeNumber, orderedTemplates, parseBookRange } from './data';
 
 const PROTECTION_OPTIONS: { value: AmountProtection; label: string }[] = [
   { value: 'slash', label: 'زي الشيكات: الرقم وبعده شرطة' },
@@ -80,7 +80,7 @@ function AccountsAndBooks({ company }: { company: Company }) {
     const list = await db.books.where('companyId').equals(company.id).toArray();
     return Promise.all(list.map(async (book) => ({ book, remaining: await remainingInBook(book) })));
   }, [company.id]);
-  const templates = useLiveQuery(() => db.templates.toArray(), []);
+  const templates = useLiveQuery(() => orderedTemplates(), []);
 
   const [bankName, setBankName] = useState('');
   const [templateId, setTemplateId] = useState('');

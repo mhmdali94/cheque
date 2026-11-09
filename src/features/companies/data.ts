@@ -1,4 +1,4 @@
-import type { BankAccount, ChequeBook, Company } from '@/core/types';
+import type { BankAccount, ChequeBook, ChequeTemplate, Company } from '@/core/types';
 import { newId, setSetting } from '@/db/repos';
 import { db } from '@/db/schema';
 
@@ -36,6 +36,12 @@ export async function addBook(input: Pick<ChequeBook, 'companyId' | 'accountId' 
   const book: ChequeBook = { ...input, id: newId(), createdAt: now, updatedAt: now };
   await db.books.add(book);
   return book;
+}
+
+/** النماذج المقاسة أولاً، فالاختيار الافتراضي يبقى الأدق. */
+export async function orderedTemplates(): Promise<ChequeTemplate[]> {
+  const rank = (t: ChequeTemplate) => (t.accuracy === 'unmeasured' ? 1 : 0);
+  return (await db.templates.toArray()).sort((a, b) => rank(a) - rank(b));
 }
 
 export type BookRangeResult = { ok: true; from: number; to: number; width: number } | { ok: false; error: string };

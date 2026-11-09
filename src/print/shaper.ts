@@ -24,6 +24,7 @@ export interface TextRequest {
 
 export interface TextMeasurer {
   measure(request: TextRequest): number;
+  hasMissingGlyphs(request: TextRequest): boolean;
 }
 
 interface FontHandle {
@@ -35,15 +36,38 @@ interface ShapedText {
   /** بوحدات الخط، ومحور y لفوق. */
   commands: OutlineCommand[];
   width: number;
-  upem: number;
+  missing: boolean;
 }
 
 const CACHE_LIMIT = 500;
+/** كل الخطوط تتحول لوحدة واحدة قبل الجمع في سطر واحد. */
+const UNITS_PER_EM = 1000;
+/** خط النسخ العربي مفيهوش الرموز والحروف اللاتينية، فلها خط احتياطي. */
+const NEEDS_FALLBACK = /[!-~\u2013\u2014\u2018-\u201D\u2026]/;
 
-function parseSvgPath(d: string, dx: number, dy: number, out: OutlineCommand[]): void {
+/** أجزاء الجزء الواحد حسب الخط، بالترتيب المنطقي. */
+function splitByFont(text: string): { text: string; fallback: boolean }[] {
+  const segments: { text: string; fallback: boolean }[] = [];
+  for (const char of text) {
+    const fallback = NEEDS_FALLBACK.test(char);
+    const last = segments[segments.length - 1];
+    if (last && last.fallback === fallback) last.text += char;
+    else segments.push({ text: char, fallback });
+  }
+  return segments;
+}
+
+export interface ShaperFonts {
+  regular: ArrayBuffer;
+  bold: ArrayBuffer;
+  latinRegular: ArrayBuffer;
+  latinBold: ArrayBuffer;
+}
+
+function parseSvgPath(d: string, scale: number, dx: number, dy: number, out: OutlineCommand[]): void {
   for (const match of d.matchAll(/([MLQCZ])([^MLQCZ]*)/g)) {
     const values = match[2].trim() === '' ? [] : match[2].trim().split(/[\s,]+/).map(Number);
-    const shifted = values.map((v, i) => v + (i % 2 === 0 ? dx : dy));
+    const shifted = values.map((v, i) => v * scale + (i % 2 === 0 ? dx : dy));
     out.push({ op: match[1], pts: shifted } as OutlineCommand);
   }
 }
@@ -65,13 +89,16 @@ export function commandsToSvgPath(commands: OutlineCommand[]): string {
 }
 
 export class Shaper implements TextMeasurer {
-  private readonly regular: FontHandle;
-  private readonly bold: FontHandle;
+  private readonly fonts: Record<'regular' | 'bold' | 'latinRegular' | 'latinBold', FontHandle>;
   private readonly cache = new Map<string, ShapedText>();
 
-  constructor(regularBytes: ArrayBuffer, boldBytes: ArrayBuffer) {
-    this.regular = Shaper.load(regularBytes);
-    this.bold = Shaper.load(boldBytes);
+  constructor(fonts: ShaperFonts) {
+    this.fonts = {
+      regular: Shaper.load(fonts.regular),
+      bold: Shaper.load(fonts.bold),
+      latinRegular: Shaper.load(fonts.latinRegular),
+      latinBold: Shaper.load(fonts.latinBold),
+    };
   }
 
   private static load(bytes: ArrayBuffer): FontHandle {
@@ -84,26 +111,34 @@ export class Shaper implements TextMeasurer {
     const cached = this.cache.get(key);
     if (cached) return cached;
 
-    const handle = bold ? this.bold : this.regular;
     const commands: OutlineCommand[] = [];
     let x = 0;
+    let missing = false;
     for (const run of splitBidiRuns(text, dir)) {
-      const buffer = new hb.Buffer();
-      buffer.addText(run.text);
-      buffer.guessSegmentProperties();
-      buffer.setDirection(run.dir === 'rtl' ? hb.Direction.RTL : hb.Direction.LTR);
-      hb.shape(handle.font, buffer);
+      const segments = splitByFont(run.text);
+      for (const segment of run.dir === 'rtl' ? segments.reverse() : segments) {
+        const handle = segment.fallback
+          ? (bold ? this.fonts.latinBold : this.fonts.latinRegular)
+          : (bold ? this.fonts.bold : this.fonts.regular);
+        const scale = UNITS_PER_EM / handle.upem;
+        const buffer = new hb.Buffer();
+        buffer.addText(segment.text);
+        buffer.guessSegmentProperties();
+        buffer.setDirection(run.dir === 'rtl' ? hb.Direction.RTL : hb.Direction.LTR);
+        hb.shape(handle.font, buffer);
 
-      const positions = buffer.getGlyphPositions();
-      buffer.getGlyphInfos().forEach((glyph, index) => {
-        const position = positions[index];
-        const path = handle.font.glyphToPath(glyph.codepoint);
-        if (path) parseSvgPath(path, x + position.xOffset, position.yOffset, commands);
-        x += position.xAdvance;
-      });
+        const positions = buffer.getGlyphPositions();
+        buffer.getGlyphInfos().forEach((glyph, index) => {
+          const position = positions[index];
+          if (glyph.codepoint === 0) missing = true;
+          const path = handle.font.glyphToPath(glyph.codepoint);
+          if (path) parseSvgPath(path, scale, x + position.xOffset * scale, position.yOffset * scale, commands);
+          x += position.xAdvance * scale;
+        });
+      }
     }
 
-    const shaped = { commands, width: x, upem: handle.upem };
+    const shaped = { commands, width: x, missing };
     if (this.cache.size >= CACHE_LIMIT) this.cache.clear();
     this.cache.set(key, shaped);
     return shaped;
@@ -111,12 +146,16 @@ export class Shaper implements TextMeasurer {
 
   measure({ text, dir, sizePt, bold }: TextRequest): number {
     const shaped = this.shape(text, dir, bold);
-    return (shaped.width / shaped.upem) * ptToMm(sizePt);
+    return (shaped.width / UNITS_PER_EM) * ptToMm(sizePt);
+  }
+
+  hasMissingGlyphs({ text, dir, bold }: TextRequest): boolean {
+    return this.shape(text, dir, bold).missing;
   }
 
   outline({ text, dir, sizePt, bold }: TextRequest): TextOutline {
     const shaped = this.shape(text, dir, bold);
-    const scale = ptToMm(sizePt) / shaped.upem;
+    const scale = ptToMm(sizePt) / UNITS_PER_EM;
     return {
       commands: transformCommands(shaped.commands, [scale, 0, 0, -scale, 0, 0]),
       widthMm: shaped.width * scale,
@@ -134,11 +173,13 @@ export function loadShaper(): Promise<Shaper> {
       if (!response.ok) throw new Error('تعذر تحميل خط الشيك');
       return response.arrayBuffer();
     };
-    const [regular, bold] = await Promise.all([
+    const [regular, bold, latinRegular, latinBold] = await Promise.all([
       fetchFont('NotoNaskhArabic-Regular.ttf'),
       fetchFont('NotoNaskhArabic-Bold.ttf'),
+      fetchFont('NotoSerifLatin-Regular.ttf'),
+      fetchFont('NotoSerifLatin-Bold.ttf'),
     ]);
-    return new Shaper(regular, bold);
+    return new Shaper({ regular, bold, latinRegular, latinBold });
   })().catch((error) => {
     shaperPromise = null;
     throw error;

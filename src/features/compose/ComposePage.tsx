@@ -2,8 +2,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { todayIso } from '@/core/date';
-import { parseAmount, toLatinDigits } from '@/core/digits';
+import { parseAmount, toArabicDigits, toLatinDigits } from '@/core/digits';
 import { amountInWords } from '@/core/layout';
+import { ACCURACY_LABEL } from '@/core/templates';
 import type { Cheque, CrossingKind } from '@/core/types';
 import { logAudit, newId, nextChequeNumber } from '@/db/repos';
 import { db } from '@/db/schema';
@@ -13,6 +14,7 @@ import { useCurrentCompany } from '@/state/useAppData';
 import { Combobox } from '@/ui/Combobox';
 import { Button, DigitInput, EmptyState, Notice, Select, TextInput } from '@/ui/controls';
 import { DatePicker } from '@/ui/DatePicker';
+import { createSimilarCheque } from './similar';
 import { chequeValues, useChequeView } from './useChequeView';
 
 const SAVE_DELAY_MS = 250;
@@ -71,18 +73,22 @@ export function ComposePage() {
         else navigate('/cheque', { replace: true });
         return;
       }
-      if (!company || !books) return;
+      if (!company || !books || !accounts) return;
       const current = chequeRef.current;
       if (current && !persistedRef.current && current.companyId === company.id) return;
 
       const book = books[0];
-      const account = accounts?.find((a) => a.id === book?.accountId);
-      const number = book ? await nextChequeNumber(book) : null;
+      const account = accounts.find((a) => a.id === book?.accountId);
+      if (!book || !account) {
+        replaceCheque(null, false);
+        return;
+      }
+      const number = await nextChequeNumber(book);
       if (!alive) return;
       const now = Date.now();
       replaceCheque({
-        id: newId(), companyId: company.id, accountId: account?.id ?? '', bookId: book?.id ?? '',
-        templateId: account?.templateId ?? '', number, status: 'draft', payee: '', amount: null, amountInput: '',
+        id: newId(), companyId: company.id, accountId: account.id, bookId: book.id,
+        templateId: account.templateId, number, status: 'draft', payee: '', amount: null, amountInput: '',
         date: todayIso(), memo: '', signatoryName: '', crossing: { kind: 'none', text: '', drawLines: false },
         printStub: false, printCount: 0, createdAt: now, updatedAt: now,
       }, false);
@@ -101,6 +107,17 @@ export function ComposePage() {
       onHide();
     };
   }, [flush]);
+
+  const shortcuts = useRef<{ review?: () => void; similar?: () => void }>({});
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (!(event.ctrlKey || event.metaKey)) return;
+      if (event.key === 'Enter' && shortcuts.current.review) { event.preventDefault(); shortcuts.current.review(); }
+      if (event.key.toLowerCase() === 'd' && shortcuts.current.similar) { event.preventDefault(); shortcuts.current.similar(); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   const update = (patch: Partial<Cheque>) => {
     const current = chequeRef.current;
@@ -158,6 +175,11 @@ export function ComposePage() {
   const needsText = cheque.crossing.kind === 'special' || cheque.crossing.kind === 'free';
   const canReview = cheque.amount !== null && cheque.payee.trim() !== '' && Boolean(cheque.bookId);
 
+  shortcuts.current = {
+    review: canReview && !locked ? () => void review() : undefined,
+    similar: persistedRef.current ? () => void flush().then(() => createSimilarCheque(cheque)).then((copy) => navigate(`/cheque/${copy.id}`)) : undefined,
+  };
+
   const form = (
     <fieldset disabled={locked} className="flex flex-col gap-4 disabled:opacity-75">
       <legend className="sr-only">بيانات الشيك</legend>
@@ -192,7 +214,7 @@ export function ComposePage() {
           const account = accounts?.find((a) => a.id === b.accountId);
           return (
             <option key={b.id} value={b.id}>
-              {account?.bankName} ، من {formatChequeNumber(b.fromNumber, b.numberWidth)} لـ {formatChequeNumber(b.toNumber, b.numberWidth)}
+              {account?.bankName} ، من {toArabicDigits(formatChequeNumber(b.fromNumber, b.numberWidth))} لـ {toArabicDigits(formatChequeNumber(b.toNumber, b.numberWidth))}
             </option>
           );
         })}
@@ -219,6 +241,12 @@ export function ComposePage() {
           onChange={(text) => update({ crossing: { ...cheque.crossing, text } })}
         />
       )}
+      {view.template?.stub.enabled && (
+        <label className="flex min-h-11 items-center gap-2 text-sm">
+          <input type="checkbox" className="size-5 accent-[var(--accent)]" checked={cheque.printStub} onChange={(e) => update({ printStub: e.target.checked })} />
+          اطبع بيانات مختصرة على الكعب
+        </label>
+      )}
       <label className="flex min-h-11 items-center gap-2 text-sm">
         <input
           type="checkbox" className="size-5 accent-[var(--accent)]" checked={cheque.crossing.drawLines}
@@ -237,7 +265,15 @@ export function ComposePage() {
     <div className="pb-24 lg:pb-0">
       <div className="grid gap-8 lg:grid-cols-[22rem_minmax(0,1fr)]">
         <div>
-          {locked && <div className="mb-4"><Notice tone="info">الشيك ده اتطبع أو اتلغى، ومش قابل للتعديل.</Notice></div>}
+          {locked && (
+            <div className="mb-4 flex flex-col gap-3">
+              <Notice tone="info">الشيك ده اتطبع أو اتلغى، ومش قابل للتعديل.</Notice>
+              <div className="flex flex-wrap gap-2">
+                <Button variant="primary" onClick={() => void createSimilarCheque(cheque).then((copy) => navigate(`/cheque/${copy.id}`))}>شيك مشابه</Button>
+                <Link className="flex min-h-11 items-center px-2 font-semibold text-accent underline" to={`/cheque/${cheque.id}/review`}>مراجعة وإعادة طباعة</Link>
+              </div>
+            </div>
+          )}
           {form}
           <div className="mt-6 hidden lg:block">{reviewButton}</div>
         </div>
@@ -247,6 +283,12 @@ export function ComposePage() {
             <ChequePreview template={view.template} model={view.model} shaper={view.shaper} chequeNumber={view.numberLabel} label="معاينة الشيك" />
           ) : (
             <div className="aspect-[174/84] w-full animate-pulse rounded-sm bg-sunken" />
+          )}
+          {view.template && view.template.accuracy !== 'adjusted' && (
+            <p className="mt-3 text-sm font-semibold text-warn">
+              {ACCURACY_LABEL[view.template.accuracy]}.{' '}
+              <Link className="underline" to={`/templates/${view.template.id}/measure`}>قِس شيكك</Link>
+            </p>
           )}
           {view.shaperError && <div className="mt-3"><Notice tone="danger">تعذر تحميل خط الشيك. أعد فتح الصفحة.</Notice></div>}
           {view.warnings.length > 0 && (

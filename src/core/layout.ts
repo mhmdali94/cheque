@@ -18,6 +18,7 @@ export interface MeasureRequest {
 
 export interface Measurer {
   measure(request: MeasureRequest): number;
+  hasMissingGlyphs(request: MeasureRequest): boolean;
 }
 
 export type FieldKey =
@@ -51,7 +52,8 @@ export interface PrintRule {
 export type LayoutIssue =
   | { kind: 'overflow'; field: FieldKey }
   | { kind: 'shrunk'; field: FieldKey; sizePt: number }
-  | { kind: 'forbidden'; field: FieldKey };
+  | { kind: 'forbidden'; field: FieldKey }
+  | { kind: 'missingGlyph'; field: FieldKey };
 
 export interface PrintModel {
   texts: PrintText[];
@@ -151,6 +153,9 @@ class Builder {
     };
     this.model.texts.push(item);
     this.checkForbidden(field, key);
+    if (this.measurer.hasMissingGlyphs({ text, dir, sizePt, bold: field.bold })) {
+      this.model.issues.push({ kind: 'missingGlyph', field: key });
+    }
     return item;
   }
 

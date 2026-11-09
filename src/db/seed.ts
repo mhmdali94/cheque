@@ -6,7 +6,7 @@ export const TOSHIBA_PROFILE_ID = 'printer-toshiba-408p';
 
 export const TOSHIBA_PROFILE: PrinterProfile = {
   id: TOSHIBA_PROFILE_ID,
-  name: 'توشيبا e-STUDIO408P',
+  name: 'توشيبا ٤٠٨',
   pageMode: 'a4',
   rotation: 90,
   mirrored: false,

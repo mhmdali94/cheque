@@ -35,6 +35,8 @@ export function chequeWarnings(input: WarningInput): Warning[] {
     const label = FIELD_LABEL[issue.field];
     if (issue.kind === 'forbidden') {
       warnings.push({ id: `forbidden-${issue.field}`, blocking: true, message: `حقل ${label} داخل منطقة الترميز الممنوعة` });
+    } else if (issue.kind === 'missingGlyph') {
+      warnings.push({ id: `glyph-${issue.field}`, blocking: true, message: `حقل ${label} فيه رمز مش هيتطبع صح، امسحه` });
     } else if (issue.kind === 'overflow') {
       warnings.push({ id: `overflow-${issue.field}`, blocking: false, message: `${label} أطول من الحقل حتى بأصغر خط` });
     } else {

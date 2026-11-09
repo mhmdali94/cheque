@@ -1,11 +1,21 @@
 import { useState } from 'react';
-import { NavLink, Outlet, useLocation, useNavigate } from 'react-router';
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { toArabicDigits } from '@/core/digits';
+import { db } from '@/db/schema';
 import { useCurrentCompany } from '@/state/useAppData';
 
 const NAV_ITEMS = [
+  { to: '/dashboard', label: 'الرئيسية' },
   { to: '/cheque', label: 'كتابة شيك' },
+  { to: '/batch', label: 'دفعة من إكسل' },
   { to: '/drafts', label: 'المسودات' },
+  { to: '/history', label: 'السجل' },
   { to: '/companies', label: 'الشركات والدفاتر' },
+  { to: '/templates', label: 'قوالب الشيكات' },
+  { to: '/printer', label: 'الطابعة والمعايرة' },
+  { to: '/backup', label: 'النسخ الاحتياطي' },
+  { to: '/settings', label: 'الإعدادات' },
 ];
 
 function NavItems({ onNavigate }: { onNavigate?: () => void }) {
@@ -57,6 +67,24 @@ function CompanyBand({ onMenu }: { onMenu: () => void }) {
   );
 }
 
+const BACKUP_REMIND_DAYS = 3;
+
+function BackupReminder() {
+  const state = useLiveQuery(async () => ({
+    last: ((await db.settings.get('lastBackupAt'))?.value as number) ?? 0,
+    count: await db.cheques.count(),
+  }), []);
+  if (!state || state.count === 0) return null;
+  const days = state.last ? Math.floor((Date.now() - state.last) / 86_400_000) : null;
+  if (days !== null && days < BACKUP_REMIND_DAYS) return null;
+  return (
+    <p className="mb-4 rounded-md bg-warn-tint px-3 py-2 text-sm font-semibold text-warn">
+      {days === null ? 'لسه ما عملتش نسخة احتياطية.' : `آخر نسخة احتياطية من ${toArabicDigits(days)} أيام.`}{' '}
+      <Link className="underline" to="/backup">اعمل نسخة</Link>
+    </p>
+  );
+}
+
 export function Shell() {
   const [menuOpen, setMenuOpen] = useState(false);
   return (
@@ -67,7 +95,7 @@ export function Shell() {
       )}
       <div className="lg:grid lg:grid-cols-[13rem_minmax(0,1fr)]">
         <aside className="sticky top-13 hidden h-[calc(100dvh-3.25rem)] border-e border-rule p-3 lg:block"><NavItems /></aside>
-        <main className="min-w-0 px-4 py-6 lg:px-8"><Outlet /></main>
+        <main className="min-w-0 px-4 py-6 lg:px-8"><BackupReminder /><Outlet /></main>
       </div>
     </div>
   );

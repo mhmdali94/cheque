@@ -147,12 +147,12 @@ export const BANK_ALEX = 'بنك الإسكندرية';
 /** أماكن الحقول في النماذج غير المقاسة منسوخة من النموذج المقاس لنفس البنك. */
 export function builtinTemplates(): ChequeTemplate[] {
   return [
-    buildTemplate('tpl-ahly-qr', BANK_AHLY, 'الحالي (QR)', AHLY, 'approximate'),
+    buildTemplate('tpl-ahly-qr', BANK_AHLY, 'الحالي (برمز مربع)', AHLY, 'approximate'),
     buildTemplate('tpl-ahly-old', BANK_AHLY, 'قديم', AHLY, 'unmeasured'),
     buildTemplate('tpl-ahly-regular', BANK_AHLY, 'عادي', AHLY, 'unmeasured'),
     buildTemplate('tpl-ahly-3', BANK_AHLY, 'نموذج ٣', AHLY, 'unmeasured'),
     buildTemplate('tpl-ahly-platinum', BANK_AHLY, 'بلاتيني', AHLY, 'unmeasured'),
-    buildTemplate('tpl-alex-1', BANK_ALEX, 'نموذج ١ (private)', ALEX, 'approximate'),
+    buildTemplate('tpl-alex-1', BANK_ALEX, 'نموذج ١ (خاص)', ALEX, 'approximate'),
     buildTemplate('tpl-alex-2', BANK_ALEX, 'نموذج ٢', ALEX, 'unmeasured'),
   ];
 }

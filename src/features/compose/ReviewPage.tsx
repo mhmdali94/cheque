@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { formatDate } from '@/core/date';
@@ -7,14 +7,24 @@ import { amountInWords } from '@/core/layout';
 import { newId } from '@/db/repos';
 import { db } from '@/db/schema';
 import { ChequePreview } from '@/features/preview/ChequePreview';
-import { Notice, PageHeader } from '@/ui/controls';
+import { Button, Notice, PageHeader } from '@/ui/controls';
+import { Magnifier } from '@/ui/Magnifier';
+import { PrintPanel } from './PrintPanel';
 import { chequeValues, useChequeView } from './useChequeView';
+
+function speak(text: string) {
+  window.speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = 'ar-EG';
+  window.speechSynthesis.speak(utterance);
+}
 
 export function ReviewPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const cheque = useLiveQuery(() => db.cheques.get(id ?? ''), [id]);
   const view = useChequeView(cheque ?? null);
+  const [lensOn, setLensOn] = useState(false);
 
   useEffect(() => {
     if (cheque === null) navigate('/cheque', { replace: true });
@@ -34,6 +44,8 @@ export function ReviewPage() {
 
   if (!cheque || !view.template || !view.company) return null;
 
+  const canSpeak = 'speechSynthesis' in window;
+
   const words = amountInWords(chequeValues(cheque, view.company));
   const digits = cheque.amount !== null ? formatProtectedAmount(cheque.amount, view.company.amountProtection, view.template.amountDigits.signSide) : '';
 
@@ -50,7 +62,13 @@ export function ReviewPage() {
       </Notice>
 
       <div className="my-6">
-        <ChequePreview template={view.template} model={view.model} shaper={view.shaper} chequeNumber={view.numberLabel} label="الشيك مكبّر للمراجعة" />
+        <Magnifier enabled={lensOn}>
+          <ChequePreview template={view.template} model={view.model} shaper={view.shaper} chequeNumber={view.numberLabel} label="الشيك مكبّر للمراجعة" />
+        </Magnifier>
+        <div className="mt-2 flex flex-wrap gap-2">
+          <Button variant="ghost" className="max-lg:hidden" aria-pressed={lensOn} onClick={() => setLensOn(!lensOn)}>{lensOn ? 'إخفاء العدسة' : 'عدسة مكبّرة'}</Button>
+          {canSpeak && <Button variant="ghost" onClick={() => speak(words)}>اسمع المبلغ</Button>}
+        </div>
       </div>
 
       <dl className="grid gap-x-8 gap-y-4 border-y border-rule py-4 md:grid-cols-[auto_1fr]">
@@ -69,6 +87,8 @@ export function ReviewPage() {
           {view.warnings.map((w) => <li key={w.id}><Notice tone={w.blocking ? 'danger' : 'warn'}>{w.message}</Notice></li>)}
         </ul>
       )}
+
+      <PrintPanel cheque={cheque} view={view} />
     </div>
   );
 }

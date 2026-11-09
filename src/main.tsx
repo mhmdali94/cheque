@@ -6,6 +6,8 @@ import { ensureSeeded } from './db/seed';
 import './index.css';
 
 // الجاهز يتضاف قبل أول رسم، عشان أول شاشة تلاقي القوالب.
+void navigator.storage?.persist?.();
+
 void ensureSeeded().finally(() => {
   createRoot(document.getElementById('root')!).render(
     <StrictMode>

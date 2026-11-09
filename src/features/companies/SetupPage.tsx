@@ -4,12 +4,12 @@ import { toLatinDigits } from '@/core/digits';
 import { setSetting } from '@/db/repos';
 import { db } from '@/db/schema';
 import { Button, DigitInput, Select, TextInput } from '@/ui/controls';
-import { addAccount, addBook, addCompany, COMPANY_COLORS, parseBookRange } from './data';
+import { addAccount, addBook, addCompany, COMPANY_COLORS, orderedTemplates, parseBookRange } from './data';
 import { ColorPicker } from './ColorPicker';
 
 /** أول فتح للتطبيق: شركة وحساب ودفتر في شاشة واحدة، وبعدها المحاسب يكتب شيك فوراً. */
 export function SetupPage() {
-  const templates = useLiveQuery(() => db.templates.toArray(), []);
+  const templates = useLiveQuery(() => orderedTemplates(), []);
   const [accountant, setAccountant] = useState('');
   const [companyName, setCompanyName] = useState('');
   const [color, setColor] = useState(COMPANY_COLORS[0].value);
@@ -34,10 +34,13 @@ export function SetupPage() {
     setErrors(next);
     if (Object.keys(next).length > 0 || !range.ok || !model) return;
 
-    await setSetting('accountantName', accountant.trim());
-    const company = await addCompany(companyName, color);
-    const account = await addAccount({ companyId: company.id, bankName: bank, label: model.modelName, accountNumber: '', templateId: model.id });
-    await addBook({ companyId: company.id, accountId: account.id, fromNumber: range.from, toNumber: range.to, numberWidth: range.width });
+    // عملية واحدة، فالتطبيق ما يشوفش شركة من غير دفتر.
+    await db.transaction('rw', db.settings, db.companies, db.accounts, db.books, async () => {
+      await setSetting('accountantName', accountant.trim());
+      const company = await addCompany(companyName, color);
+      const account = await addAccount({ companyId: company.id, bankName: bank, label: model.modelName, accountNumber: '', templateId: model.id });
+      await addBook({ companyId: company.id, accountId: account.id, fromNumber: range.from, toNumber: range.to, numberWidth: range.width });
+    });
   };
 
   return (

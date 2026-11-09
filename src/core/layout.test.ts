@@ -112,6 +112,10 @@ describe('تخطيط الشيك', () => {
     expect(texts(moved).issues).toContainEqual({ kind: 'forbidden', field: 'payee' });
   });
 
+  it('الرمز غير المدعوم يتسجل كمشكلة', () => {
+    expect(texts(ahly, { payee: 'شركة 😀' }).issues).toContainEqual({ kind: 'missingGlyph', field: 'payee' });
+  });
+
   it('المسودة بدون مبلغ', () => {
     expect(texts(ahly, { amount: null }).texts.some((t) => t.field === 'amountDigits')).toBe(false);
   });

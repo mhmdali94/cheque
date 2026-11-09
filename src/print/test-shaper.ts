@@ -7,4 +7,9 @@ const read = (file: string) => {
   return buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength) as ArrayBuffer;
 };
 
-export const createTestShaper = () => new Shaper(read('NotoNaskhArabic-Regular.ttf'), read('NotoNaskhArabic-Bold.ttf'));
+export const createTestShaper = () => new Shaper({
+  regular: read('NotoNaskhArabic-Regular.ttf'),
+  bold: read('NotoNaskhArabic-Bold.ttf'),
+  latinRegular: read('NotoSerifLatin-Regular.ttf'),
+  latinBold: read('NotoSerifLatin-Bold.ttf'),
+});

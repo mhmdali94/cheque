@@ -31,7 +31,7 @@ function GlyphText({ item, shaper, fill }: { item: PrintText; shaper: Shaper; fi
     if (item.angleDeg) matrix = compose(matrix, rotationAround(item.angleDeg, item.pivot.x, item.pivot.y));
     return commandsToSvgPath(transformCommands(commands, matrix));
   }, [item, shaper]);
-  return <path key={item.text} className="ink-in" d={d} fill={fill} />;
+  return <path className="ink-in" d={d} fill={fill} />;
 }
 
 /** خلفية محايدة أو صورة شيك المحاسب. لا تحتوي تصميم أو شعار أي بنك. */
@@ -44,27 +44,28 @@ function ChequeBackground({ template, chequeNumber, imageUrl }: {
 
   const [lineA1, lineA2] = [applyMatrix(translation(-1.5, 0), guide.x, guide.y + guide.h), applyMatrix(translation(-1.5, 0), guide.x + guide.w, guide.y)];
   const [lineB1, lineB2] = [applyMatrix(translation(1.5, 0), guide.x, guide.y + guide.h), applyMatrix(translation(1.5, 0), guide.x + guide.w, guide.y)];
-  const hints: [string, number][] = [
-    ['المستفيد', template.payee.y + template.payee.h],
-    ['المبلغ', template.amountWords.line1.y + template.amountWords.line1.h],
-    ['', template.amountWords.line2.y + template.amountWords.line2.h],
-  ];
+  const writingLines = [template.payee, template.amountWords.line1, template.amountWords.line2];
+  const digitsBox = template.amountDigits;
 
   return (
     <>
       <rect width={L} height={W} fill={BANK_TINT[template.bankName] ?? DEFAULT_BANK_TINT} />
-      <text x={L - 5} y={9} textAnchor="start" fontSize={4} fontWeight={700} fill={PRINTED}>{template.bankName}</text>
+      <defs>
+        <pattern id="security-paper" width="1.6" height="1.6" patternUnits="userSpaceOnUse" patternTransform="rotate(32)">
+          <line x1="0" y1="0" x2="0" y2="1.6" stroke="oklch(0.5 0.03 165 / 0.09)" strokeWidth="0.12" />
+        </pattern>
+      </defs>
+      <rect width={L} height={micrLineY} fill="url(#security-paper)" />
+      <text x={4} y={9} textAnchor="end" fontSize={3.2} fontWeight={700} fill={PRINTED}>{template.bankName}</text>
       <text x={L / 2} y={8} textAnchor="middle" fontSize={3.2} fill={PRINTED}>شيك</text>
       {chequeNumber && (
         <text x={L / 2} y={13} textAnchor="middle" fontSize={3} fill={PRINTED} direction="ltr">{toArabicDigits(chequeNumber)}</text>
       )}
 
-      {hints.map(([label, y], index) => (
-        <g key={index}>
-          <line x1={8} x2={L - 6} y1={y} y2={y} stroke={PRINTED_FAINT} strokeWidth={0.15} />
-          {label && <text x={L - 7} y={y - 1} fontSize={2.3} fill={PRINTED}>{label}</text>}
-        </g>
+      {writingLines.map((field, index) => (
+        <line key={index} x1={field.x} x2={field.x + field.w} y1={field.y + field.h} y2={field.y + field.h} stroke={PRINTED_FAINT} strokeWidth={0.15} />
       ))}
+      <rect x={digitsBox.x} y={digitsBox.y} width={digitsBox.w} height={digitsBox.h} fill="none" stroke={PRINTED_FAINT} strokeWidth={0.15} />
 
       {date.mode === 'cells' && Array.from({ length: 8 }, (_, i) => (
         <rect
@@ -96,8 +97,10 @@ interface ChequePreviewProps {
 }
 
 /** لوحة بأبعاد الشيك الفعلية بالمليمتر، وتكبر مع عرض الحاوية. */
-export function ChequePreview({ template, model, shaper, chequeNumber, label, ink = 'blue' }: ChequePreviewProps) {
+export function ChequePreview({ template, model, shaper, chequeNumber, label, ink: inkProp }: ChequePreviewProps) {
   const imageUrl = useStoredImageUrl(template.imageId);
+  const storedInk = useLiveQuery(() => db.settings.get('previewInk').then((e) => e?.value as keyof typeof INK | undefined), []);
+  const ink = inkProp ?? storedInk ?? 'blue';
   return (
     <svg
       viewBox={`0 0 ${template.lengthMm} ${template.widthMm}`} role="img" aria-label={label}
@@ -109,7 +112,7 @@ export function ChequePreview({ template, model, shaper, chequeNumber, label, in
         <line key={index} x1={rule.x1} y1={rule.y1} x2={rule.x2} y2={rule.y2} stroke={INK[ink]} strokeWidth={rule.thicknessMm} />
       ))}
       {shaper && model?.texts.map((item, index) => (
-        <GlyphText key={`${item.field}-${index}-${item.text}`} item={item} shaper={shaper} fill={INK[ink]} />
+        <GlyphText key={`${item.field}-${index}`} item={item} shaper={shaper} fill={INK[ink]} />
       ))}
     </svg>
   );
