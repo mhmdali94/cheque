@@ -32,7 +32,7 @@ function NewCompanyForm({ onDone }: { onDone: () => void }) {
 
   return (
     <form onSubmit={(e) => void submit(e)} className="mb-8 flex max-w-lg flex-col gap-4 rounded-md border border-rule bg-surface p-4" noValidate>
-      <TextInput label="اسم الشركة" value={name} onChange={setName} error={error} autoFocus />
+      <TextInput label="اسم الشركة" value={name} onChange={setName} error={error} autoFocus hint="الشركة صاحبة دفتر الشيكات." />
       <ColorPicker value={color} onChange={setColor} />
       <div className="flex gap-2">
         <Button type="submit" variant="primary">حفظ الشركة</Button>
@@ -137,7 +137,7 @@ function AccountsAndBooks({ company }: { company: Company }) {
           <Select label="نموذج الشيك" value={model?.id ?? ''} onChange={setTemplateId}>
             {models.map((t) => <option key={t.id} value={t.id}>{t.modelName}</option>)}
           </Select>
-          <TextInput label="اسم مميز للحساب" value={label} onChange={setLabel} hint="اختياري." />
+          <TextInput label="اسم مميز للحساب" value={label} onChange={setLabel} hint="اختياري، عشان تفرّق بين الحسابات. مثلاً: حساب المرتبات." />
           <DigitInput label="رقم الحساب" value={accountNumber} onChange={setAccountNumber} hint="اختياري، للتأكيد قبل الطباعة." />
           <Button type="submit" className="self-start">إضافة حساب</Button>
         </form>
@@ -166,8 +166,8 @@ function AccountsAndBooks({ company }: { company: Company }) {
               {accounts.map((a) => <option key={a.id} value={a.id}>{a.bankName} ، {a.label}</option>)}
             </Select>
             <div className="grid grid-cols-2 gap-3">
-              <DigitInput label="أول رقم" value={from} onChange={setFrom} error={rangeError} />
-              <DigitInput label="آخر رقم" value={to} onChange={setTo} />
+              <DigitInput label="أول رقم" value={from} onChange={setFrom} error={rangeError} hint="المطبوع على أول ورقة." />
+              <DigitInput label="آخر رقم" value={to} onChange={setTo} hint="المطبوع على آخر ورقة." />
             </div>
             <Button type="submit" className="self-start">إضافة دفتر</Button>
           </form>

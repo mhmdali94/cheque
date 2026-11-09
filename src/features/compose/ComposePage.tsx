@@ -185,10 +185,12 @@ export function ComposePage() {
       <legend className="sr-only">بيانات الشيك</legend>
       <Combobox
         label="المستفيد" value={cheque.payee} onChange={(payee) => update({ payee })}
+        hint="اسم الشخص أو الشركة اللي هيصرف الشيك، زي ما هيتكتب عليه."
         options={[...(payees ?? [])].sort((a, b) => b.useCount - a.useCount).map((p) => p.name)}
       />
       <DigitInput
         label="المبلغ بالجنيه" value={cheque.amountInput}
+        hint="بالأرقام وبالجنيه الصحيح، من غير قروش. التفقيط بيتكتب لوحده."
         error={parsedAmount && !parsedAmount.ok ? parsedAmount.error : undefined}
         onChange={(amountInput) => {
           const parsed = parseAmount(amountInput);
@@ -198,9 +200,10 @@ export function ComposePage() {
       <p aria-live="polite" className="-mt-2 min-h-6 text-sm text-ink-soft">{words}</p>
 
       <div className="grid grid-cols-2 gap-3">
-        <DatePicker label="التاريخ" value={cheque.date} onChange={(date) => update({ date })} />
+        <DatePicker label="التاريخ" value={cheque.date} onChange={(date) => update({ date })} hint="تاريخ صرف الشيك. لو بعد النهارده يبقى مؤجل." />
         <DigitInput
           label="رقم الشيك"
+          hint="المطبوع على الورقة جنب كلمة شيك."
           value={cheque.number === null ? '' : view.book ? formatChequeNumber(cheque.number, view.book.numberWidth) : String(cheque.number)}
           onChange={(input) => {
             const digits = toLatinDigits(input).replace(/\D/g, '');
@@ -209,7 +212,7 @@ export function ComposePage() {
         />
       </div>
 
-      <Select label="الدفتر" value={cheque.bookId} onChange={(v) => void changeBook(v)}>
+      <Select label="الدفتر" value={cheque.bookId} onChange={(v) => void changeBook(v)} hint="دفتر الشيكات اللي الورقة دي منه.">
         {books.map((b) => {
           const account = accounts?.find((a) => a.id === b.accountId);
           return (
@@ -220,10 +223,10 @@ export function ComposePage() {
         })}
       </Select>
 
-      <TextInput label="البيان" value={cheque.memo} onChange={(memo) => update({ memo })} hint="للسجل فقط، إلا لو فعّلته في القالب." />
+      <TextInput label="البيان" value={cheque.memo} onChange={(memo) => update({ memo })} hint="سبب الدفع، للرجوع إليه في السجل. مثلاً: إيجار شهر مارس. عادةً مش بيتطبع على الشيك." />
 
       <div>
-        <Combobox label="الاسم" value={cheque.signatoryName} onChange={(signatoryName) => update({ signatoryName })} options={signatoryNames} hint="لو فاضية مش هتتطبع." />
+        <Combobox label="الاسم" value={cheque.signatoryName} onChange={(signatoryName) => update({ signatoryName })} options={signatoryNames} hint="اسم المفوض بالتوقيع اللي بيتطبع فوق مكان التوقيع. لو فاضي مش هيتطبع." />
         {canSaveSignatory && (
           <Button variant="ghost" className="mt-1" onClick={() => void saveSignatory()}>احفظ الاسم ده</Button>
         )}
@@ -231,6 +234,7 @@ export function ComposePage() {
 
       <Select
         label="عبارة التسطير" value={cheque.crossing.kind}
+        hint="بتتكتب بين خطي التسطير المطبوعين على الشيك. لو مش متأكد سيبها بدون عبارة."
         onChange={(kind) => update({ crossing: { ...cheque.crossing, kind: kind as CrossingKind } })}
       >
         {CROSSING_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
@@ -238,6 +242,7 @@ export function ComposePage() {
       {needsText && (
         <TextInput
           label={cheque.crossing.kind === 'special' ? 'اسم البنك' : 'العبارة'} value={cheque.crossing.text}
+          hint={cheque.crossing.kind === 'special' ? 'البنك الوحيد اللي ينفع الشيك يتصرف عن طريقه.' : 'مثلاً: لا يصرف إلا من خلال العميل.'}
           onChange={(text) => update({ crossing: { ...cheque.crossing, text } })}
         />
       )}

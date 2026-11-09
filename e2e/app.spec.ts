@@ -106,3 +106,29 @@ test('مخزن البيانات المحجوب يعرض رسالة بدل صفح
   await page.goto('/');
   await expect(page.getByText(/تعذر فتح مخزن البيانات/)).toBeVisible();
 });
+
+test('زر تحديث التطبيق يعيد التحميل ويحافظ على البيانات', async ({ page, context }) => {
+  await completeSetup(page);
+  await writeCheque(page, 'يفضل بعد التحديث', '900');
+  await page.waitForTimeout(500);
+  await page.evaluate(() => navigator.serviceWorker.ready);
+  await page.goto('/settings');
+  await expect(page.getByText(/الإصدار الحالي/)).toBeVisible();
+  expect(await visibleLatinText(page)).toEqual([]);
+
+  // من غير إنترنت: رسالة، والملفات المؤقتة تفضل زي ما هي
+  await context.setOffline(true);
+  await page.getByRole('button', { name: 'تحديث التطبيق' }).click();
+  await expect(page.getByText(/مفيش اتصال بالموقع/)).toBeVisible();
+  expect(await page.evaluate(async () => (await caches.keys()).length)).toBeGreaterThan(0);
+  await context.setOffline(false);
+
+  await page.evaluate(() => { (window as unknown as { __stale: boolean }).__stale = true; });
+  await Promise.all([page.waitForEvent('load'), page.getByRole('button', { name: 'تحديث التطبيق' }).click()]);
+  await expect(page.getByRole('heading', { name: 'الإعدادات' })).toBeVisible();
+  expect(await page.evaluate(() => (window as unknown as { __stale?: boolean }).__stale)).toBeUndefined();
+
+  await page.goto('/drafts');
+  await expect(page.getByRole('link', { name: /يفضل بعد التحديث/ })).toBeVisible();
+  await expect.poll(() => page.evaluate(async () => (await navigator.serviceWorker.getRegistrations()).length)).toBe(1);
+});

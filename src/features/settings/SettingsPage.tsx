@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { getSetting, setSetting } from '@/db/repos';
 import { db } from '@/db/schema';
-import { PageHeader, Select, TextInput } from '@/ui/controls';
+import { Button, Notice, PageHeader, Select, TextInput } from '@/ui/controls';
+import { formatDateTime } from '@/core/date';
+import { forceUpdate } from './forceUpdate';
 
 const THEME_KEY = 'shikaty-theme';
 
@@ -14,8 +16,24 @@ function applyTheme(theme: string) {
 
 export function SettingsPage() {
   const [name, setName] = useState('');
+  const [updating, setUpdating] = useState(false);
+  const [updateError, setUpdateError] = useState('');
   const ink = useLiveQuery(() => getSetting('previewInk', 'blue'), []) ?? 'blue';
   const theme = useLiveQuery(() => getSetting('theme', 'light'), []) ?? 'light';
+
+  const runUpdate = async () => {
+    setUpdating(true);
+    setUpdateError('');
+    try {
+      if ((await forceUpdate()) === 'offline') {
+        setUpdateError('مفيش اتصال بالموقع دلوقتي. اتصل بالإنترنت وجرّب تاني.');
+        setUpdating(false);
+      }
+    } catch {
+      setUpdateError('تعذر التحديث. أعد فتح الصفحة وجرّب تاني.');
+      setUpdating(false);
+    }
+  };
 
   useEffect(() => { void db.settings.get('accountantName').then((e) => setName((e?.value as string) ?? '')); }, []);
 
@@ -32,6 +50,17 @@ export function SettingsPage() {
       <Select label="لون الحبر في المعاينة" value={ink} onChange={(v) => void setSetting('previewInk', v)} hint="الطباعة على الشيك دايماً بالأسود.">
         <option value="blue">أزرق</option><option value="black">أسود</option>
       </Select>
+
+      <section className="flex flex-col gap-3 border-t border-rule pt-5">
+        <h2 className="font-bold">تحديث التطبيق</h2>
+        <p className="text-sm text-ink-soft">
+          الإصدار الحالي: {formatDateTime(__BUILD_TIME__)}. استخدم الزر لو نزل تحديث وما ظهرش عندك. الشيكات والبيانات مش هتتمسح.
+        </p>
+        {updateError && <Notice tone="danger">{updateError}</Notice>}
+        <Button className="self-start" disabled={updating} onClick={() => void runUpdate()}>
+          {updating ? 'جاري التحديث...' : 'تحديث التطبيق'}
+        </Button>
+      </section>
     </div>
   );
 }

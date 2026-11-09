@@ -9,10 +9,11 @@ interface DatePickerProps {
   label: string;
   value: string;
   onChange: (iso: string) => void;
+  hint?: string;
 }
 
 /** منتقي تاريخ عربي: منتقي المتصفح بيظهر بلغة الجهاز. */
-export function DatePicker({ label, value, onChange }: DatePickerProps) {
+export function DatePicker({ label, value, onChange, hint }: DatePickerProps) {
   const id = useId();
   const rootRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
@@ -98,13 +99,15 @@ export function DatePicker({ label, value, onChange }: DatePickerProps) {
       <span id={`${id}-label`} className="text-sm font-semibold">{label}</span>
       <button
         type="button" className={`${INPUT_CLASS} text-start tabular-nums`} aria-haspopup="dialog" aria-expanded={open}
-        aria-labelledby={`${id}-label ${id}-value`} onClick={toggle}
+        aria-labelledby={`${id}-label ${id}-value`} aria-describedby={hint ? `${id}-hint` : undefined} onClick={toggle}
       >
         <span id={`${id}-value`} dir="ltr">{formatDate(value) || 'اختار'}</span>
       </button>
 
+      {hint && <p id={`${id}-hint`} className="text-sm text-ink-soft">{hint}</p>}
+
       {open && (
-        <div role="dialog" aria-label={label} className="absolute top-full z-30 mt-1 w-[19.5rem] max-w-[calc(100vw-2rem)] rounded-md border border-rule-strong bg-surface p-3 shadow-lg">
+        <div role="dialog" aria-label={label} className="absolute top-[4.75rem] z-30 mt-1 w-[19.5rem] max-w-[calc(100vw-2rem)] rounded-md border border-rule-strong bg-surface p-3 shadow-lg">
           <div className="flex items-center justify-between">
             <button type="button" aria-label="الشهر السابق" className={navClass} onClick={() => shiftMonth(-1)}>›</button>
             <p aria-live="polite" className="font-bold">{ARABIC_MONTHS[view.month - 1]} {toArabicDigits(view.year)}</p>

@@ -42,6 +42,7 @@ export default defineConfig({
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },
   build: { chunkSizeWarningLimit: 1500 },
+  define: { __BUILD_TIME__: Date.now() },
   test: {
     environment: 'node',
     include: ['src/**/*.test.ts'],

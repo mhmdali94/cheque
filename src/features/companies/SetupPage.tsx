@@ -49,13 +49,13 @@ export function SetupPage() {
       <p className="mt-2 text-ink-soft">نجهّز أول دفتر شيكات. كل البيانات بتتحفظ على جهازك بس.</p>
 
       <form onSubmit={(e) => void submit(e)} className="mt-8 flex flex-col gap-5" noValidate>
-        <TextInput label="اسمك" value={accountant} onChange={setAccountant} error={errors.accountant} autoComplete="name" />
-        <TextInput label="اسم الشركة" value={companyName} onChange={setCompanyName} error={errors.company} />
+        <TextInput label="اسمك" value={accountant} onChange={setAccountant} error={errors.accountant} autoComplete="name" hint="المحاسب اللي بيستخدم الجهاز ده. بيظهر في السجل ونسخة المراجعة." />
+        <TextInput label="اسم الشركة" value={companyName} onChange={setCompanyName} error={errors.company} hint="الشركة صاحبة دفتر الشيكات." />
         <ColorPicker value={color} onChange={setColor} />
 
         <hr className="border-rule" />
 
-        <Select label="البنك" value={bank} onChange={(v) => { setBankName(v); setTemplateId(''); }}>
+        <Select label="البنك" value={bank} onChange={(v) => { setBankName(v); setTemplateId(''); }} hint="البنك اللي دفتر الشيكات منه.">
           {banks.map((b) => <option key={b}>{b}</option>)}
         </Select>
         <Select
@@ -66,8 +66,8 @@ export function SetupPage() {
         </Select>
 
         <div className="grid grid-cols-2 gap-3">
-          <DigitInput label="أول رقم في الدفتر" value={from} onChange={setFrom} error={errors.range} />
-          <DigitInput label="آخر رقم في الدفتر" value={to} onChange={setTo} />
+          <DigitInput label="أول رقم في الدفتر" value={from} onChange={setFrom} error={errors.range} hint="المطبوع على أول ورقة." />
+          <DigitInput label="آخر رقم في الدفتر" value={to} onChange={setTo} hint="المطبوع على آخر ورقة." />
         </div>
 
         <Button type="submit" variant="primary" className="mt-2">ابدأ</Button>
