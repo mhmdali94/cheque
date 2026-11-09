@@ -1,0 +1,130 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+@font-face {
+  font-family: 'Cairo';
+  src: url('/fonts/cairo-arabic-wght-normal.woff2') format('woff2');
+  font-weight: 200 1000;
+  font-display: swap;
+  unicode-range: U+0600-06FF, U+0750-077F, U+0870-088E, U+08A0-08FF, U+200C-200E, U+FB50-FDFF, U+FE70-FEFC;
+}
+
+@font-face {
+  font-family: 'Cairo';
+  src: url('/fonts/cairo-latin-wght-normal.woff2') format('woff2');
+  font-weight: 200 1000;
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+2000-206F, U+20AC, U+2122;
+}
+
+:root {
+  --paper: oklch(0.972 0.009 88);
+  --surface: oklch(0.992 0.004 88);
+  --sunken: oklch(0.945 0.011 88);
+  --rule: oklch(0.875 0.013 88);
+  --rule-strong: oklch(0.76 0.016 88);
+  --ink: oklch(0.25 0.018 165);
+  --ink-soft: oklch(0.45 0.017 140);
+  --accent: oklch(0.4 0.085 165);
+  --accent-strong: oklch(0.33 0.08 165);
+  --accent-tint: oklch(0.93 0.03 165);
+  --on-accent: oklch(0.98 0.008 165);
+  --danger: oklch(0.49 0.17 27);
+  --danger-tint: oklch(0.95 0.03 27);
+  --warn: oklch(0.47 0.1 70);
+  --warn-tint: oklch(0.95 0.05 85);
+  --cheque-shadow: 0 1px 2px oklch(0.3 0.02 88 / 0.12), 0 12px 28px -14px oklch(0.3 0.02 88 / 0.25);
+  color-scheme: light;
+}
+
+[data-theme='dark'] {
+  --paper: oklch(0.2 0.011 165);
+  --surface: oklch(0.245 0.012 165);
+  --sunken: oklch(0.175 0.01 165);
+  --rule: oklch(0.34 0.012 165);
+  --rule-strong: oklch(0.46 0.014 165);
+  --ink: oklch(0.93 0.008 110);
+  --ink-soft: oklch(0.74 0.012 120);
+  --accent: oklch(0.73 0.1 165);
+  --accent-strong: oklch(0.8 0.09 165);
+  --accent-tint: oklch(0.3 0.04 165);
+  --on-accent: oklch(0.18 0.02 165);
+  --danger: oklch(0.74 0.14 27);
+  --danger-tint: oklch(0.3 0.06 27);
+  --warn: oklch(0.8 0.11 80);
+  --warn-tint: oklch(0.3 0.05 80);
+  --cheque-shadow: 0 1px 2px oklch(0 0 0 / 0.3), 0 14px 30px -14px oklch(0 0 0 / 0.55);
+  color-scheme: dark;
+}
+
+@theme inline {
+  --font-sans: 'Cairo', 'Segoe UI', Tahoma, sans-serif;
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-sunken: var(--sunken);
+  --color-rule: var(--rule);
+  --color-rule-strong: var(--rule-strong);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-tint: var(--accent-tint);
+  --color-on-accent: var(--on-accent);
+  --color-danger: var(--danger);
+  --color-danger-tint: var(--danger-tint);
+  --color-warn: var(--warn);
+  --color-warn-tint: var(--warn-tint);
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+@layer base {
+  html {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-kerning: normal;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    min-height: 100dvh;
+  }
+
+  h1, h2, h3 {
+    text-wrap: balance;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  button, [role='option'], summary, label[for] {
+    cursor: pointer;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+  }
+}
+
+@layer components {
+  /* دخول الحبر: تغيّر شفافية سريع عند ملء الحقل */
+  .ink-in {
+    animation: ink-in 220ms var(--ease-out-quart);
+  }
+
+  @keyframes ink-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

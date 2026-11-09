@@ -1,0 +1,145 @@
+import { describe, expect, it } from 'vitest';
+import { createTestShaper } from '@/print/test-shaper';
+import { buildPageSetup } from './geometry';
+import { layoutCheque, tokenizeWords, type ChequeValues } from './layout';
+import { builtinTemplates } from './templates';
+import type { ChequeTemplate } from './types';
+import { chequeWarnings, marginWarnings } from './warnings';
+
+const shaper = createTestShaper();
+const templates = builtinTemplates();
+const ahly = templates.find((t) => t.id === 'tpl-ahly-qr')!;
+const alex = templates.find((t) => t.id === 'tpl-alex-1')!;
+
+const values: ChequeValues = {
+  payee: 'شركة النور للتجارة', amount: 148500, date: '2026-03-14', memo: '', signatoryName: '',
+  crossing: { kind: 'none', text: '', drawLines: false }, printStub: false,
+  tafqeetPresetId: 'accounting', amountProtection: 'slash',
+};
+
+const texts = (t: ChequeTemplate, v: Partial<ChequeValues> = {}) => layoutCheque(t, { ...values, ...v }, shaper);
+
+describe('القوالب الجاهزة', () => {
+  it('مقاسات البنكين', () => {
+    expect([ahly.lengthMm, ahly.widthMm]).toEqual([174, 84]);
+    expect([alex.lengthMm, alex.widthMm]).toEqual([175, 84]);
+  });
+
+  it.each(templates.map((t) => [t.name, t] as const))('%s: الحقول داخل الشيك وفوق منطقة الترميز', (_name, t) => {
+    for (const f of [t.date, t.payee, t.amountWords.line1, t.amountWords.line2, t.amountDigits, t.signatoryName]) {
+      expect(f.x).toBeGreaterThanOrEqual(0);
+      expect(f.x + f.w).toBeLessThanOrEqual(t.lengthMm);
+      expect(f.y + f.h).toBeLessThanOrEqual(t.micrLineY);
+    }
+  });
+
+  it('الخانات الثماني داخل مربع التاريخ', () => {
+    const lastCenter = ahly.date.firstCellCenterX + 7 * ahly.date.cellPitch;
+    expect(ahly.date.firstCellCenterX).toBeGreaterThan(ahly.date.x);
+    expect(lastCenter).toBeLessThan(ahly.date.x + ahly.date.w);
+  });
+});
+
+describe('تخطيط الشيك', () => {
+  it('المبلغ بالأرقام بالشكل المطلوب', () => {
+    expect(texts(ahly).texts.find((t) => t.field === 'amountDigits')?.text).toBe('١٤٨٥٠٠/-');
+  });
+
+  it('خانات التاريخ: اليوم على الشمال', () => {
+    const digits = texts(ahly).texts.filter((t) => t.field === 'date');
+    expect(digits.map((d) => d.text)).toEqual(['١', '٤', '٠', '٣', '٢', '٠', '٢', '٦']);
+    expect(digits[0].x).toBeLessThan(digits[7].x);
+  });
+
+  it('خانات التاريخ معكوسة لو القالب اختار كده', () => {
+    const reversed = { ...ahly, date: { ...ahly.date, cellOrder: 'rtl' as const } };
+    const digits = texts(reversed).texts.filter((t) => t.field === 'date');
+    expect(digits[0].x).toBeGreaterThan(digits[7].x);
+  });
+
+  it('التفقيط لا يضيع منه كلام بين السطرين', () => {
+    const { texts: items } = texts(ahly, { amount: 999_999_999_999 });
+    const line1 = items.find((t) => t.field === 'amountWords1')!.text;
+    const line2 = items.find((t) => t.field === 'amountWords2')!.text;
+    expect(`${line1} ${line2}`).toContain('لا غير');
+    expect(`${line1} ${line2}`.startsWith('فقط تسعمائة')).toBe(true);
+    expect(line2.endsWith('لا غير')).toBe(true);
+  });
+
+  it('«لا غير» و«جنيه مصري» لا يتفصلوا', () => {
+    expect(tokenizeWords('فقط مائة جنيه مصري لا غير')).toEqual(['فقط', 'مائة', 'جنيه مصري', 'لا غير']);
+  });
+
+  it('ملء باقي السطر بخط، والسطر التاني كامل لو فاضي', () => {
+    const { rules, texts: items } = texts(ahly, { amount: 5 });
+    const first = items.find((t) => t.field === 'amountWords1')!;
+    const fill1 = rules.find((r) => r.field === 'amountWords1')!;
+    expect(fill1.x2).toBeLessThan(first.x);
+    const fill2 = rules.find((r) => r.field === 'amountWords2')!;
+    expect(fill2.x2 - fill2.x1).toBeCloseTo(ahly.amountWords.line2.w, 3);
+    expect(items.some((t) => t.field === 'amountWords2')).toBe(false);
+  });
+
+  it('المحاذاة لليمين تنتهي عند حافة الحقل', () => {
+    const payee = texts(ahly).texts.find((t) => t.field === 'payee')!;
+    expect(payee.x + payee.widthMm).toBeCloseTo(ahly.payee.x + ahly.payee.w, 6);
+  });
+
+  it('اسم طويل يتصغّر خطه', () => {
+    const { issues, texts: items } = texts(ahly, { payee: 'شركة النور للتجارة والمقاولات العامة والتوريدات الهندسية والكهربائية ش.م.م' });
+    const payee = items.find((t) => t.field === 'payee')!;
+    expect(payee.sizePt).toBeLessThan(ahly.payee.fontSizePt);
+    expect(issues.some((i) => i.field === 'payee')).toBe(true);
+  });
+
+  it('خانة الاسم لا تُطبع لو فاضية', () => {
+    expect(texts(ahly).texts.some((t) => t.field === 'signatoryName')).toBe(false);
+    expect(texts(ahly, { signatoryName: 'أحمد علي' }).texts.some((t) => t.field === 'signatoryName')).toBe(true);
+  });
+
+  it('التسطير بزاوية القالب، والخطوط الإضافية بالاختيار فقط', () => {
+    const plain = texts(ahly, { crossing: { kind: 'firstBeneficiary', text: '', drawLines: false } });
+    const item = plain.texts.find((t) => t.field === 'crossing')!;
+    expect(item.text).toBe('يصرف للمستفيد الأول');
+    expect(item.angleDeg).toBe(ahly.crossing.angleDeg);
+    expect(plain.rules.some((r) => r.field === 'crossing')).toBe(false);
+    const drawn = texts(ahly, { crossing: { kind: 'none', text: '', drawLines: true } });
+    expect(drawn.rules.filter((r) => r.field === 'crossing')).toHaveLength(2);
+  });
+
+  it('الحقل داخل منطقة الترميز يتسجل كمشكلة', () => {
+    const moved = { ...ahly, payee: { ...ahly.payee, y: ahly.micrLineY - 1 } };
+    expect(texts(moved).issues).toContainEqual({ kind: 'forbidden', field: 'payee' });
+  });
+
+  it('المسودة بدون مبلغ', () => {
+    expect(texts(ahly, { amount: null }).texts.some((t) => t.field === 'amountDigits')).toBe(false);
+  });
+});
+
+describe('التحذيرات', () => {
+  const model = texts(ahly);
+  const base = { model, date: '2026-03-14', today: '2026-03-14', amount: 100, number: 5, isDuplicateNumber: false };
+  const ids = (input: Parameters<typeof chequeWarnings>[0]) => chequeWarnings(input).map((w) => w.id);
+
+  it('شيك عادي بدون تحذيرات', () => expect(ids(base)).toEqual([]));
+  it('مؤجل', () => expect(ids({ ...base, date: '2026-04-01' })).toEqual(['postdated']));
+  it('أقدم من ٦ شهور', () => expect(ids({ ...base, date: '2025-09-01' })).toEqual(['stale']));
+  it('فوق الحد', () => expect(ids({ ...base, amountLimit: 50 })).toEqual(['limit']));
+  it('مكرر', () => expect(ids({ ...base, isDuplicateNumber: true })).toEqual(['duplicate']));
+  it('خارج نطاق الدفتر يحتاج تأكيد', () => {
+    const [warning] = chequeWarnings({ ...base, bookRange: { from: 10, to: 20 } });
+    expect(warning).toMatchObject({ id: 'range', blocking: true });
+  });
+
+  it('القوالب الجاهزة خارج هامش الطابعة', () => {
+    const { matrix } = buildPageSetup(174, 84, { pageMode: 'a4', rotation: 90, mirrored: false, align: 'center' });
+    expect(marginWarnings(model, matrix, 5)).toEqual([]);
+  });
+
+  it('حقل عند الحافة الشمال يدخل الهامش', () => {
+    const moved = { ...ahly, payee: { ...ahly.payee, x: 0, w: 40, align: 'left' as const } };
+    const { matrix } = buildPageSetup(174, 84, { pageMode: 'a4', rotation: 90, mirrored: false, align: 'center' });
+    expect(marginWarnings(texts(moved), matrix, 5).map((w) => w.id)).toEqual(['margin-payee']);
+  });
+});
