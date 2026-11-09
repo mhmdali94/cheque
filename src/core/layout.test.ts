@@ -131,6 +131,14 @@ describe('القوالب الجاهزة', () => {
     });
   });
 
+  it('شيك الإسكندرية الشخصي نسخة من نموذج ١', () => {
+    const personal = templates.find((t) => t.id === 'tpl-alex-personal')!;
+    expect(personal.bankName).toBe(alex.bankName);
+    expect(personal.modelName).toBe('شخصي');
+    const positions = ({ id: _id, name: _name, modelName: _model, ...rest }: ChequeTemplate) => rest;
+    expect(positions(personal)).toEqual(positions(alex));
+  });
+
   it('قيم الأهلي النهائية ما اتغيرتش', () => {
     expect(ahly.lengthMm - (ahly.date.x + ahly.date.w)).toBeCloseTo(12, 2);
     expect(ahly.date.y + ahly.date.h * 0.74).toBeCloseTo(8.55, 1);

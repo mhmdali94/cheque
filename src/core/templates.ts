@@ -197,6 +197,7 @@ export function builtinTemplates(): ChequeTemplate[] {
     buildTemplate('tpl-ahly-3', BANK_AHLY, 'نموذج ٣', AHLY, 'unmeasured'),
     buildTemplate('tpl-ahly-platinum', BANK_AHLY, 'بلاتيني', AHLY, 'unmeasured'),
     buildTemplate('tpl-alex-1', BANK_ALEX, 'نموذج ١ (خاص)', ALEX, 'approximate'),
+    buildTemplate('tpl-alex-personal', BANK_ALEX, 'شخصي', ALEX, 'approximate'),
     buildTemplate('tpl-alex-2', BANK_ALEX, 'نموذج ٢', ALEX, 'unmeasured'),
   ];
 }
