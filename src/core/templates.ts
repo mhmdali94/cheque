@@ -38,7 +38,8 @@ const AHLY: ChequeMeasurements = {
   widthMm: 84,
   date: { top: 11, from: 10, to: 28 },
   dateBoxMm: { fromRight: 17, width: 32.5, height: 6, baselineY: 9.55 },
-  payee: { top: 27, from: 10, to: 75 },
+  // مقاس بالتجربة: ٥ مم تحت النسبة الأصلية، والبداية ٤٠ مم من الحافة اليمنى.
+  payee: { top: 27 + (5 / 84) * 100, from: (40 / 174) * 100, to: 75 },
   words1: { top: 40, from: wordsStartPercent(174), to: 85 },
   words2: { top: 51, from: 10, to: 85 },
   digits: { top: 45, from: 4, to: 20 },

@@ -55,6 +55,16 @@ describe('القوالب الجاهزة', () => {
     expect(lastCenter).toBeCloseTo(ahly.date.x + 32.5 - 32.5 / 16, 2);
   });
 
+  it.each(templates.filter((t) => t.bankName === ahly.bankName).map((t) => [t.name, t] as const))('%s: المستفيد على بعد ٤ سم ونازل نص سم', (_name, t) => {
+    expect(t.lengthMm - (t.payee.x + t.payee.w)).toBeCloseTo(40, 1);
+    expect(t.payee.y).toBeCloseTo(84 * 0.27 - 5.5 + 5, 1);
+    expect(t.payee.y + t.payee.h).toBeLessThanOrEqual(t.micrLineY);
+  });
+
+  it('مستفيد الإسكندرية ما اتغيرش', () => {
+    expect(alex.lengthMm - (alex.payee.x + alex.payee.w)).toBeCloseTo(175 * 0.06, 1);
+  });
+
   it('تاريخ الإسكندرية ما اتغيرش', () => {
     expect(alex.date.w).toBeCloseTo(175 * 0.17, 2);
     expect(alex.lengthMm - (alex.date.x + alex.date.w)).toBeCloseTo(175 * 0.09, 2);
