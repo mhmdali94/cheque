@@ -33,7 +33,7 @@ describe('القوالب الجاهزة', () => {
     }
   });
 
-  it.each(templates.map((t) => [t.name, t] as const))('%s: التفقيط يبدأ على بعد ٦٥ مم من اليمين', (_name, t) => {
+  it.each(templates.filter((t) => t.bankName === ahly.bankName).map((t) => [t.name, t] as const))('%s: التفقيط يبدأ على بعد ٦٥ مم من اليمين', (_name, t) => {
     const { x, w } = t.amountWords.line1;
     expect(t.lengthMm - (x + w)).toBeCloseTo(65, 1);
   });
@@ -91,29 +91,36 @@ describe('القوالب الجاهزة', () => {
     const fromRight = (f: { x: number; w: number }) => t.lengthMm - (f.x + f.w);
     const ahlyFromRight = (f: { x: number; w: number }) => ahly.lengthMm - (f.x + f.w);
 
-    it('التاريخ ١ مم لتحت و٣ مم يمين', () => {
-      expect(fromRight(t.date)).toBeCloseTo(ahlyFromRight(ahly.date) - 3, 1);
+    it('التاريخ يبدأ ٢٫٤ سم من اليمين و١ مم تحت الأهلي', () => {
+      expect(fromRight(t.date)).toBeCloseTo(24, 1);
       expect(t.date.w).toBe(32.5);
       expect(t.date.h).toBe(6);
       expect(t.date.y).toBeCloseTo(ahly.date.y + 1, 1);
     });
 
-    it('المبلغ بالأرقام ٢ مم لتحت و٢ مم يمين وبنفس الخط', () => {
-      expect(fromRight(t.amountDigits)).toBeCloseTo(ahlyFromRight(ahly.amountDigits) - 2, 1);
+    it('المبلغ بالأرقام بالمقاس المعدل وبنفس الخط', () => {
+      expect(fromRight(t.amountDigits)).toBeCloseTo(ahlyFromRight(ahly.amountDigits) + 13, 1);
       expect(t.amountDigits.w).toBeCloseTo(ahly.amountDigits.w, 1);
-      expect(t.amountDigits.y).toBeCloseTo(ahly.amountDigits.y + 2, 1);
+      expect(t.amountDigits.y).toBeCloseTo(ahly.amountDigits.y - 3, 1);
       expect(t.amountDigits.fontSizePt).toBe(14);
     });
 
-    it('الباقي زي الأهلي بالمليمتر من اليمين ومن فوق', () => {
-      const pairs = [
-        [t.payee, ahly.payee], [t.amountWords.line1, ahly.amountWords.line1],
-        [t.amountWords.line2, ahly.amountWords.line2], [t.signatoryName, ahly.signatoryName],
-      ];
-      for (const [mine, theirs] of pairs) {
-        expect(fromRight(mine)).toBeCloseTo(ahlyFromRight(theirs), 1);
-        expect(mine.w).toBeCloseTo(theirs.w, 1);
-        expect(mine.y).toBeCloseTo(theirs.y, 1);
+    it.each([
+      ['المستفيد', (x: ChequeTemplate) => x.payee, 0, 0],
+      ['سطر التفقيط الأول', (x: ChequeTemplate) => x.amountWords.line1, 10, -5],
+      ['سطر التفقيط التاني', (x: ChequeTemplate) => x.amountWords.line2, 10, -5],
+      ['اسم المفوض', (x: ChequeTemplate) => x.signatoryName, 15, -2],
+    ] as const)('%s بالإزاحة المطلوبة', (_label, field, left, down) => {
+      const [mine, theirs] = [field(t), field(ahly)];
+      expect(fromRight(mine)).toBeCloseTo(ahlyFromRight(theirs) + left, 1);
+      expect(mine.w).toBeCloseTo(theirs.w, 1);
+      expect(mine.y).toBeCloseTo(theirs.y + down, 1);
+    });
+
+    it('كل الحقول جوه الورقة وبعيد عن هامش الطابعة', () => {
+      for (const f of [t.date, t.payee, t.amountWords.line1, t.amountWords.line2, t.amountDigits, t.signatoryName]) {
+        expect(f.x).toBeGreaterThanOrEqual(5);
+        expect(f.x + f.w).toBeLessThanOrEqual(t.lengthMm);
       }
     });
 

@@ -60,9 +60,12 @@ const asAlex = (range: Range): Range => ({
   to: (range.to * AHLY.lengthMm) / ALEX_LENGTH_MM,
 });
 
-/** تخطيط الأهلي بتعديلات مقاسة على شيك الإسكندرية، مع الاحتفاظ بأماكنه المطبوعة مسبقاً. */
-const ALEX_DIGITS_RIGHT_SHIFT_PERCENT = (2 / ALEX_LENGTH_MM) * 100;
-const ALEX_DIGITS = asAlex(AHLY.digits);
+/** تحريك نطاق على شيك الإسكندرية بالمليمتر: موجب left للشمال، وموجب down لتحت. */
+const movedOnAlex = (range: Range, left: number, down: number): Range => ({
+  top: range.top + (down / 84) * 100,
+  from: range.from + (left / ALEX_LENGTH_MM) * 100,
+  to: range.to + (left / ALEX_LENGTH_MM) * 100,
+});
 
 const ALEX: ChequeMeasurements = {
   lengthMm: ALEX_LENGTH_MM,
@@ -70,19 +73,16 @@ const ALEX: ChequeMeasurements = {
   date: { top: 14, from: 9, to: 26 },
   dateBoxMm: {
     ...AHLY.dateBoxMm!,
-    fromRight: AHLY.dateBoxMm!.fromRight - 3,
+    fromRight: AHLY.dateBoxMm!.fromRight + 12,
     baselineY: AHLY.dateBoxMm!.baselineY + 1,
   },
   payee: asAlex(AHLY.payee),
-  words1: asAlex(AHLY.words1),
-  words2: asAlex(AHLY.words2),
-  digits: {
-    top: ALEX_DIGITS.top + (2 / 84) * 100,
-    from: ALEX_DIGITS.from - ALEX_DIGITS_RIGHT_SHIFT_PERCENT,
-    to: ALEX_DIGITS.to - ALEX_DIGITS_RIGHT_SHIFT_PERCENT,
-  },
+  // كل الإزاحات دي مقاسة بالتجربة على شيك الإسكندرية الفعلي.
+  words1: movedOnAlex(asAlex(AHLY.words1), 10, -5),
+  words2: movedOnAlex(asAlex(AHLY.words2), 10, -5),
+  digits: movedOnAlex(asAlex(AHLY.digits), 13, -3),
   digitsFontPt: AHLY.digitsFontPt,
-  name: asAlex(AHLY.name),
+  name: movedOnAlex(asAlex(AHLY.name), 15, -2),
   signature: { topFrom: 62, topTo: 72, from: 10, to: 45 },
   crossing: { topFrom: 5, topTo: 18, from: 39, to: 48 },
   micrTop: 77,
