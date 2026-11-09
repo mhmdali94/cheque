@@ -132,3 +132,18 @@ test('زر تحديث التطبيق يعيد التحميل ويحافظ على
   await expect(page.getByRole('link', { name: /يفضل بعد التحديث/ })).toBeVisible();
   await expect.poll(() => page.evaluate(async () => (await navigator.serviceWorker.getRegistrations()).length)).toBe(1);
 });
+
+test('وصول إصدار جديد يعيد تحميل الصفحة مرة واحدة', async ({ page }) => {
+  await completeSetup(page);
+  await page.evaluate(() => navigator.serviceWorker.ready);
+  await expect.poll(() => page.evaluate(() => Boolean(navigator.serviceWorker.controller))).toBe(true);
+  await page.reload();
+  await expect(page.getByRole('img', { name: 'معاينة الشيك' })).toBeVisible();
+  await page.evaluate(() => { (window as unknown as { __stale: boolean }).__stale = true; });
+  await Promise.all([
+    page.waitForEvent('load'),
+    page.evaluate(() => navigator.serviceWorker.dispatchEvent(new Event('controllerchange'))),
+  ]);
+  await expect(page.getByRole('img', { name: 'معاينة الشيك' })).toBeVisible();
+  expect(await page.evaluate(() => (window as unknown as { __stale?: boolean }).__stale)).toBeUndefined();
+});

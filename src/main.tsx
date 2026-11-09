@@ -8,6 +8,17 @@ import './index.css';
 // الجاهز يتضاف قبل أول رسم، عشان أول شاشة تلاقي القوالب.
 void navigator.storage?.persist?.();
 
+// لما إصدار جديد يستلم التحكم، الصفحة المفتوحة لسه شغالة بالقديم، فتتحمل مرة واحدة.
+// المسودات بتتحفظ تلقائياً، وأول تثبيت (من غير إصدار سابق) مش بيعمل إعادة تحميل.
+if (navigator.serviceWorker?.controller) {
+  let reloading = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (reloading) return;
+    reloading = true;
+    window.location.reload();
+  });
+}
+
 const root = document.getElementById('root')!;
 
 ensureSeeded().then(
