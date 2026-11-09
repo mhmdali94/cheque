@@ -1,5 +1,5 @@
 /** تشكيل النص العربي بـ HarfBuzz وتحويله لمسارات، بنفس الناتج على كل الأجهزة. */
-import * as hb from 'harfbuzzjs';
+import type * as HarfBuzz from 'harfbuzzjs';
 import { splitBidiRuns, type TextDirection } from '@/core/bidi';
 import { applyMatrix, ptToMm, type Matrix } from '@/core/geometry';
 
@@ -28,7 +28,7 @@ export interface TextMeasurer {
 }
 
 interface FontHandle {
-  font: hb.Font;
+  font: HarfBuzz.Font;
   upem: number;
 }
 
@@ -92,16 +92,19 @@ export class Shaper implements TextMeasurer {
   private readonly fonts: Record<'regular' | 'bold' | 'latinRegular' | 'latinBold', FontHandle>;
   private readonly cache = new Map<string, ShapedText>();
 
-  constructor(fonts: ShaperFonts) {
+  private readonly hb: typeof HarfBuzz;
+
+  constructor(hb: typeof HarfBuzz, fonts: ShaperFonts) {
+    this.hb = hb;
     this.fonts = {
-      regular: Shaper.load(fonts.regular),
-      bold: Shaper.load(fonts.bold),
-      latinRegular: Shaper.load(fonts.latinRegular),
-      latinBold: Shaper.load(fonts.latinBold),
+      regular: Shaper.load(hb, fonts.regular),
+      bold: Shaper.load(hb, fonts.bold),
+      latinRegular: Shaper.load(hb, fonts.latinRegular),
+      latinBold: Shaper.load(hb, fonts.latinBold),
     };
   }
 
-  private static load(bytes: ArrayBuffer): FontHandle {
+  private static load(hb: typeof HarfBuzz, bytes: ArrayBuffer): FontHandle {
     const face = new hb.Face(new hb.Blob(bytes));
     return { font: new hb.Font(face), upem: face.upem };
   }
@@ -121,11 +124,11 @@ export class Shaper implements TextMeasurer {
           ? (bold ? this.fonts.latinBold : this.fonts.latinRegular)
           : (bold ? this.fonts.bold : this.fonts.regular);
         const scale = UNITS_PER_EM / handle.upem;
-        const buffer = new hb.Buffer();
+        const buffer = new this.hb.Buffer();
         buffer.addText(segment.text);
         buffer.guessSegmentProperties();
-        buffer.setDirection(run.dir === 'rtl' ? hb.Direction.RTL : hb.Direction.LTR);
-        hb.shape(handle.font, buffer);
+        buffer.setDirection(run.dir === 'rtl' ? this.hb.Direction.RTL : this.hb.Direction.LTR);
+        this.hb.shape(handle.font, buffer);
 
         const positions = buffer.getGlyphPositions();
         buffer.getGlyphInfos().forEach((glyph, index) => {
@@ -173,13 +176,15 @@ export function loadShaper(): Promise<Shaper> {
       if (!response.ok) throw new Error('تعذر تحميل خط الشيك');
       return response.arrayBuffer();
     };
-    const [regular, bold, latinRegular, latinBold] = await Promise.all([
+    // تحميل عند الطلب: لو ملف التشكيل فشل، باقي التطبيق يفضل شغال ويعرض رسالة.
+    const [hb, regular, bold, latinRegular, latinBold] = await Promise.all([
+      import('harfbuzzjs'),
       fetchFont('NotoNaskhArabic-Regular.ttf'),
       fetchFont('NotoNaskhArabic-Bold.ttf'),
       fetchFont('NotoSerifLatin-Regular.ttf'),
       fetchFont('NotoSerifLatin-Bold.ttf'),
     ]);
-    return new Shaper({ regular, bold, latinRegular, latinBold });
+    return new Shaper(hb, { regular, bold, latinRegular, latinBold });
   })().catch((error) => {
     shaperPromise = null;
     throw error;

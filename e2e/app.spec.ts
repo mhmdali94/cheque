@@ -92,3 +92,17 @@ test('اختصار البحث والمسار غير الموجود', async ({ pa
   await page.goto('/مسار-غير-موجود');
   await expect(page.getByRole('img', { name: 'معاينة الشيك' })).toBeVisible();
 });
+
+test('فشل ملف التشكيل ما يوقعش التطبيق', async ({ page }) => {
+  await page.route('**/*.wasm', (route) => route.fulfill({ status: 404, body: '' }));
+  await completeSetup(page);
+  await expect(page.getByText('تعذر تحميل خط الشيك. أعد فتح الصفحة.')).toBeVisible();
+});
+
+test('مخزن البيانات المحجوب يعرض رسالة بدل صفحة بيضا', async ({ page }) => {
+  await page.addInitScript(() => {
+    IDBFactory.prototype.open = () => { throw new DOMException('denied', 'SecurityError'); };
+  });
+  await page.goto('/');
+  await expect(page.getByText(/تعذر فتح مخزن البيانات/)).toBeVisible();
+});

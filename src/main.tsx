@@ -8,12 +8,20 @@ import './index.css';
 // الجاهز يتضاف قبل أول رسم، عشان أول شاشة تلاقي القوالب.
 void navigator.storage?.persist?.();
 
-void ensureSeeded().finally(() => {
-  createRoot(document.getElementById('root')!).render(
-    <StrictMode>
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
-    </StrictMode>,
-  );
-});
+const root = document.getElementById('root')!;
+
+ensureSeeded().then(
+  () => {
+    createRoot(root).render(
+      <StrictMode>
+        <BrowserRouter>
+          <App />
+        </BrowserRouter>
+      </StrictMode>,
+    );
+  },
+  () => {
+    root.innerHTML = '<p style="max-width:32rem;margin:4rem auto;padding:0 1rem;font-size:1.125rem;line-height:1.8">'
+      + 'تعذر فتح مخزن البيانات على المتصفح ده. اتأكد إنك مش في وضع التصفح الخاص، وإن الموقع مسموح له يخزن بيانات، وبعدين افتح الصفحة تاني.</p>';
+  },
+);

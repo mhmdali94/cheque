@@ -14,6 +14,17 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      // لو كود التطبيق ما اشتغلش خالص، تظهر رسالة بدل صفحة بيضا. React يمسحها لو اشتغل متأخر.
+      addEventListener('load', function () {
+        setTimeout(function () {
+          var root = document.getElementById('root');
+          if (root && !root.hasChildNodes()) {
+            root.innerHTML = '<p style="max-width:32rem;margin:4rem auto;padding:0 1rem;font-family:Tahoma,sans-serif;font-size:18px;line-height:1.8">التطبيق ما اشتغلش. لازم يتفتح من رابط الموقع، بعد رفع محتوى مجلد البناء (dist) في جذر الموقع.</p>';
+          }
+        }, 5000);
+      });
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
