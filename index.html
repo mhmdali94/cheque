@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="ar" dir="rtl" translate="no">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="google" content="notranslate" />
+    <title>شيكاتي</title>
+    <link rel="preload" href="/fonts/cairo-arabic-wght-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <script>
+      try {
+        if (localStorage.getItem('shikaty-theme') === 'dark') document.documentElement.dataset.theme = 'dark';
+      } catch {}
+    </script>
+    <script type="module" crossorigin src="/assets/index-7d6Gc1mH.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/rolldown-runtime-pP25SEvz.js">
+    <link rel="modulepreload" crossorigin href="/assets/preload-helper-7y9sWmk5.js">
+    <link rel="stylesheet" crossorigin href="/assets/index-eVY-FMow.css">
+  <link rel="manifest" href="/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/registerSW.js"></script></head>
+  <body>
+    <div id="root"></div>
+    <script>
+      // لو كود التطبيق ما اشتغلش خالص، تظهر رسالة بدل صفحة بيضا. React يمسحها لو اشتغل متأخر.
+      addEventListener('load', function () {
+        setTimeout(function () {
+          var root = document.getElementById('root');
+          if (root && !root.hasChildNodes()) {
+            root.innerHTML = '<p style="max-width:32rem;margin:4rem auto;padding:0 1rem;font-family:Tahoma,sans-serif;font-size:18px;line-height:1.8">التطبيق ما اشتغلش. لازم يتفتح من رابط الموقع، بعد رفع محتوى مجلد البناء (dist) في جذر الموقع.</p>';
+          }
+        }, 5000);
+      });
+    </script>
+  </body>
+</html>

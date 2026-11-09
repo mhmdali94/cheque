@@ -1,0 +1,2 @@
+Cairo (cairo-*.woff2), Noto Naskh Arabic (NotoNaskhArabic-*.ttf) and a Basic Latin subset of Noto Serif (NotoSerifLatin-*.ttf)
+are licensed under the SIL Open Font License 1.1: https://openfontlicense.org
