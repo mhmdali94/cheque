@@ -12,7 +12,7 @@ export interface Warning {
 
 export const FIELD_LABEL: Record<FieldKey, string> = {
   date: 'التاريخ', payee: 'المستفيد', amountWords1: 'المبلغ بالحروف', amountWords2: 'المبلغ بالحروف',
-  amountDigits: 'المبلغ بالأرقام', crossing: 'عبارة التسطير', signatoryName: 'الاسم', memo: 'البيان',
+  amountDigits: 'المبلغ بالأرقام', crossing: 'عبارة التسطير', signatoryName: 'اسم المفوض بالتوقيع', memo: 'البيان',
   stubDate: 'تاريخ الكعب', stubPayee: 'مستفيد الكعب', stubAmount: 'مبلغ الكعب',
 };
 

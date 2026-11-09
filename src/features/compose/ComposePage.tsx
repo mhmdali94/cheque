@@ -226,7 +226,7 @@ export function ComposePage() {
       <TextInput label="البيان" value={cheque.memo} onChange={(memo) => update({ memo })} hint="سبب الدفع، للرجوع إليه في السجل. مثلاً: إيجار شهر مارس. عادةً مش بيتطبع على الشيك." />
 
       <div>
-        <Combobox label="الاسم" value={cheque.signatoryName} onChange={(signatoryName) => update({ signatoryName })} options={signatoryNames} hint="اسم المفوض بالتوقيع اللي بيتطبع فوق مكان التوقيع. لو فاضي مش هيتطبع." />
+        <Combobox label="اسم المفوض بالتوقيع" value={cheque.signatoryName} onChange={(signatoryName) => update({ signatoryName })} options={signatoryNames} hint="الشخص اللي هيوقّع الشيك. اسمه بيتطبع فوق مكان التوقيع، ولو فاضي مش هيتطبع." />
         {canSaveSignatory && (
           <Button variant="ghost" className="mt-1" onClick={() => void saveSignatory()}>احفظ الاسم ده</Button>
         )}

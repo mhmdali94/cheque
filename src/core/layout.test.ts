@@ -64,7 +64,16 @@ describe('القوالب الجاهزة', () => {
     const { x, w } = t.amountWords.line2;
     expect(t.lengthMm - (x + w)).toBeCloseTo(50, 1);
     expect(x + w).toBeLessThan(t.amountDigits.x);
-    expect(t.amountDigits.y).toBeCloseTo(84 * 0.45 - 5.5 + 0.3, 1);
+    expect(t.amountDigits.y).toBeCloseTo(84 * 0.45 - 5.5 + 2.8, 1);
+    expect(t.amountDigits.fontSizePt).toBe(14);
+    expect(t.signatoryName.y).toBeCloseTo(84 * 0.63 - 5.5 - 4, 1);
+    expect(t.signatoryName.y).toBeGreaterThanOrEqual(t.amountDigits.y + t.amountDigits.h);
+  });
+
+  it('المبلغ بالخط الأكبر يفضل داخل خانته', () => {
+    const digits = texts(ahly).texts.find((t) => t.field === 'amountDigits')!;
+    expect(digits.sizePt).toBe(14);
+    expect(digits.widthMm).toBeLessThanOrEqual(ahly.amountDigits.w);
   });
 
   it('خط السطر التاني ما يوصلش لخانة المبلغ حتى لو السطر فاضي', () => {
@@ -77,6 +86,8 @@ describe('القوالب الجاهزة', () => {
     const { x, w } = alex.amountWords.line2;
     expect(alex.lengthMm - (x + w)).toBeCloseTo(175 * 0.2, 1);
     expect(alex.amountDigits.y).toBeCloseTo(84 * 0.42 - 5.5, 1);
+    expect(alex.amountDigits.fontSizePt).toBe(12);
+    expect(alex.signatoryName.y).toBeCloseTo(84 * 0.54 - 5.5, 1);
   });
 
   it('مستفيد الإسكندرية ما اتغيرش', () => {

@@ -20,7 +20,7 @@ const RULER_MM = 7;
 const SAVE_DELAY_MS = 300;
 
 const SAMPLE: ChequeValues = {
-  payee: 'اسم المستفيد هنا', amount: 148500, date: '2026-03-14', memo: 'بيان', signatoryName: 'الاسم',
+  payee: 'اسم المستفيد هنا', amount: 148500, date: '2026-03-14', memo: 'بيان', signatoryName: 'اسم المفوض',
   crossing: { kind: 'firstBeneficiary', text: '', drawLines: false }, printStub: true,
   tafqeetPresetId: 'accounting', amountProtection: 'slash',
 };
@@ -46,7 +46,7 @@ const FIELDS: FieldDefinition[] = [
   { id: 'line2', label: 'بالحروف، سطر ٢', get: (t) => t.amountWords.line2, set: (t, b) => ({ ...t, amountWords: { ...t.amountWords, line2: { ...t.amountWords.line2, ...b } } }) },
   { id: 'digits', label: 'بالأرقام', get: (t) => t.amountDigits, set: (t, b) => ({ ...t, amountDigits: { ...t.amountDigits, ...b } }) },
   { id: 'crossing', label: 'التسطير', get: (t) => t.crossing, set: (t, b) => ({ ...t, crossing: { ...t.crossing, ...b } }) },
-  { id: 'name', label: 'الاسم', get: (t) => t.signatoryName, set: (t, b) => ({ ...t, signatoryName: { ...t.signatoryName, ...b } }) },
+  { id: 'name', label: 'اسم المفوض بالتوقيع', get: (t) => t.signatoryName, set: (t, b) => ({ ...t, signatoryName: { ...t.signatoryName, ...b } }) },
   { id: 'memo', label: 'البيان', get: (t) => t.memo, set: (t, b) => ({ ...t, memo: { ...t.memo, ...b } }) },
   { id: 'signature', label: 'مكان التوقيع', get: (t) => t.signatureBox, set: (t, b) => ({ ...t, signatureBox: b }) },
   { id: 'stubDate', label: 'الكعب، التاريخ', stubOnly: true, get: (t) => t.stub.date, set: (t, b) => ({ ...t, stub: { ...t.stub, date: { ...t.stub.date, ...b } } }) },

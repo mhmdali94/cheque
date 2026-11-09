@@ -23,6 +23,7 @@ interface ChequeMeasurements {
   words1: Range;
   words2: Range;
   digits: Range;
+  digitsFontPt?: number;
   name: Range;
   signature: { topFrom: number; topTo: number; from: number; to: number };
   crossing: { topFrom: number; topTo: number; from: number; to: number };
@@ -43,8 +44,9 @@ const AHLY: ChequeMeasurements = {
   words1: { top: 40, from: wordsStartPercent(174), to: 85 },
   // السطر التاني بيبدأ ٥٠ مم من اليمين عشان خطه ما يدخلش تحت خانة المبلغ بالأرقام.
   words2: { top: 51, from: (50 / 174) * 100, to: 85 },
-  digits: { top: 45 + (0.3 / 84) * 100, from: 4, to: 20 },
-  name: { top: 63, from: 10, to: 45 },
+  digits: { top: 45 + (2.8 / 84) * 100, from: 4, to: 20 },
+  digitsFontPt: 14,
+  name: { top: 63 - (4 / 84) * 100, from: 10, to: 45 },
   signature: { topFrom: 70, topTo: 80, from: 10, to: 45 },
   crossing: { topFrom: 5, topTo: 20, from: 71, to: 79 },
   micrTop: 81,
@@ -134,7 +136,7 @@ function buildTemplate(
       line2: textField(m, m.words2, 11, { bold: true }),
       fillRemainder: true,
     },
-    amountDigits: { ...textField(m, m.digits, 12, { align: 'center', bold: true, minFontSizePt: 8 }), signSide: 'right' },
+    amountDigits: { ...textField(m, m.digits, m.digitsFontPt ?? 12, { align: 'center', bold: true, minFontSizePt: 8 }), signSide: 'right' },
     crossing: {
       x: round(guide.x + guide.w / 2 - crossingLength / 2),
       y: round(guide.y + guide.h / 2 - 2.5),
