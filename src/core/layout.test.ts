@@ -87,7 +87,7 @@ describe('القوالب الجاهزة', () => {
     expect(fill.x2).toBeLessThan(ahly.amountDigits.x);
   });
 
-  describe.each(templates.filter((t) => t.bankName === alex.bankName).map((t) => [t.name, t] as const))('%s منسوخ من الأهلي', (_name, t) => {
+  describe.each(templates.filter((t) => t.bankName === alex.bankName && t.id !== 'tpl-alex-personal').map((t) => [t.name, t] as const))('%s منسوخ من الأهلي', (_name, t) => {
     const fromRight = (f: { x: number; w: number }) => t.lengthMm - (f.x + f.w);
     const ahlyFromRight = (f: { x: number; w: number }) => ahly.lengthMm - (f.x + f.w);
 
@@ -131,12 +131,18 @@ describe('القوالب الجاهزة', () => {
     });
   });
 
-  it('شيك الإسكندرية الشخصي نسخة من نموذج ١', () => {
+  it('شيك الإسكندرية الشخصي: التاريخ بس هو المختلف', () => {
     const personal = templates.find((t) => t.id === 'tpl-alex-personal')!;
     expect(personal.bankName).toBe(alex.bankName);
     expect(personal.modelName).toBe('شخصي');
-    const positions = ({ id: _id, name: _name, modelName: _model, ...rest }: ChequeTemplate) => rest;
+    const positions = ({ id: _id, name: _name, modelName: _model, date: _date, ...rest }: ChequeTemplate) => rest;
     expect(positions(personal)).toEqual(positions(alex));
+
+    expect(personal.date.x).toBeCloseTo(alex.date.x + 1, 2);
+    expect(personal.date.y).toBeCloseTo(alex.date.y + 1, 2);
+    expect(personal.date.w).toBe(alex.date.w);
+    expect(personal.date.h).toBe(alex.date.h);
+    expect(personal.date.firstCellCenterX).toBeCloseTo(alex.date.firstCellCenterX + 1, 2);
   });
 
   it('قيم الأهلي النهائية ما اتغيرتش', () => {
