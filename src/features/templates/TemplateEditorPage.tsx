@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react';
-import { Link, useParams } from 'react-router';
+import { Link, useNavigate, useParams } from 'react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { toArabicDigits, toLatinDigits } from '@/core/digits';
 import { layoutCheque, type ChequeValues } from '@/core/layout';
@@ -11,6 +11,7 @@ import { commandsToSvgPath, transformCommands } from '@/print/shaper';
 import { compose, rotationAround, translation } from '@/core/geometry';
 import { useShaper } from '@/state/useAppData';
 import { Button, DigitInput, Notice, PageHeader, Select } from '@/ui/controls';
+import { orderedTemplates } from '@/features/companies/data';
 import { exportTemplate, resetBuiltin } from './data';
 import { PhotoCapture } from './PhotoCapture';
 
@@ -89,8 +90,16 @@ interface DragState {
 }
 
 export function TemplateEditorPage() {
-  const { id } = useParams();
-  const stored = useLiveQuery(() => db.templates.get(id ?? ''), [id]);
+  const { id = '' } = useParams();
+  // مفتاح القالب بيعيد بناء الشاشة، فأي تعديل معلق يتحفظ قبل الانتقال لقالب تاني.
+  return <TemplateEditor key={id} id={id} />;
+}
+
+function TemplateEditor({ id }: { id: string }) {
+  const navigate = useNavigate();
+  const stored = useLiveQuery(() => db.templates.get(id), [id]);
+  const allTemplates = useLiveQuery(() => orderedTemplates(), []);
+  const [dirty, setDirty] = useState(false);
   const [template, setTemplate] = useState<ChequeTemplate | null>(null);
   const [selected, setSelected] = useState<FieldId>('payee');
   const [showGrid, setShowGrid] = useState(true);
@@ -112,10 +121,12 @@ export function TemplateEditorPage() {
       pendingRef.current = null;
       void db.templates.put(pending);
     }
+    setDirty(false);
   }, []);
   useEffect(() => flush, [flush]);
 
   const change = useCallback((updater: (t: ChequeTemplate) => ChequeTemplate) => {
+    setDirty(true);
     setTemplate((current) => {
       if (!current) return current;
       const next = { ...updater(current), accuracy: 'adjusted' as const, updatedAt: Date.now() };
@@ -129,6 +140,15 @@ export function TemplateEditorPage() {
   const model = useMemo(() => (template && shaper ? layoutCheque(template, SAMPLE, shaper) : null), [template, shaper]);
 
   if (!template) return null;
+
+  const banks = [...new Set(allTemplates?.map((t) => t.bankName))];
+  const sameBank = allTemplates?.filter((t) => t.bankName === template.bankName) ?? [];
+  const openBank = (bank: string) => {
+    const list = allTemplates?.filter((t) => t.bankName === bank) ?? [];
+    // القالب الأصلي المقاس أولاً، مش النسخ.
+    const target = list.find((t) => t.builtin && t.accuracy !== 'unmeasured') ?? list.find((t) => t.builtin) ?? list[0];
+    if (target) navigate(`/templates/${target.id}`);
+  };
 
   const L = template.lengthMm;
   const W = template.widthMm;
@@ -189,12 +209,26 @@ export function TemplateEditorPage() {
   return (
     <>
       <PageHeader title={template.name}>
+        <Button variant="primary" disabled={!dirty} onClick={flush}>{dirty ? 'حفظ التعديلات' : 'محفوظ'}</Button>
         <Link className="flex min-h-11 items-center font-semibold text-accent underline" to={`/templates/${template.id}/measure`}>قياس الشيك</Link>
         <Button onClick={() => void exportTemplate(template)}>تصدير القالب</Button>
         {template.builtin && (
-          <Button variant="ghost" onClick={() => { pendingRef.current = null; window.clearTimeout(saveTimer.current); void resetBuiltin(template); }}>ارجع للأماكن الأصلية</Button>
+          <Button variant="ghost" onClick={() => { pendingRef.current = null; window.clearTimeout(saveTimer.current); setDirty(false); void resetBuiltin(template); }}>ارجع للأماكن الأصلية</Button>
         )}
       </PageHeader>
+
+      <div className="mb-4 grid max-w-2xl gap-3 sm:grid-cols-2">
+        <Select label="البنك" value={template.bankName} onChange={openBank}>
+          {banks.map((bank) => <option key={bank}>{bank}</option>)}
+        </Select>
+        <Select label="النموذج" value={template.id} onChange={(next) => navigate(`/templates/${next}`)}>
+          {sameBank.map((t) => <option key={t.id} value={t.id}>{t.modelName}</option>)}
+        </Select>
+      </div>
+
+      {!template.builtin && (
+        <div className="mb-4"><Notice tone="warn">ده قالب منسوخ، فمش بيستقبل تحديثات الأماكن. الحساب لازم يكون مربوط بالقالب الأصلي عشان يطبع صح.</Notice></div>
+      )}
 
       {template.accuracy !== 'adjusted' && <div className="mb-4"><Notice tone="warn">{ACCURACY_LABEL[template.accuracy]}</Notice></div>}
 
