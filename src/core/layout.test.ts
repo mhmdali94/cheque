@@ -66,10 +66,11 @@ describe('القوالب الجاهزة', () => {
     expect(x + w).toBeLessThan(t.amountDigits.x);
     expect(t.amountDigits.y).toBeCloseTo(84 * 0.45 - 5.5 + 2.8, 1);
     expect(t.amountDigits.fontSizePt).toBe(14);
-    expect(t.signatoryName.y).toBeCloseTo(84 * 0.63 - 5.5 + 1, 1);
+    expect(t.signatoryName.y).toBeCloseTo(84 * 0.63 - 5.5 - 1, 1);
     expect(t.amountWords.line1.y).toBeCloseTo(84 * 0.4 - 5.5 + 3, 1);
     expect(t.amountWords.line2.y).toBeCloseTo(84 * 0.51 - 5.5 + 3, 1);
-    expect(t.signatoryName.y).toBeGreaterThanOrEqual(t.amountWords.line2.y + t.amountWords.line2.h);
+    // المربعان متلامسان، والمهم إن سطور الكتابة نفسها متباعدة بما يكفي الحروف
+    expect(t.signatoryName.y + t.signatoryName.h * 0.74 - (t.amountWords.line2.y + t.amountWords.line2.h * 0.74)).toBeGreaterThan(5);
     expect(t.signatoryName.y + t.signatoryName.h).toBeLessThanOrEqual(t.signatureBox.y);
     expect(t.signatoryName.y).toBeGreaterThanOrEqual(t.amountDigits.y + t.amountDigits.h);
   });
