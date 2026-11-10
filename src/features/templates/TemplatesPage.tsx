@@ -45,7 +45,7 @@ export function TemplatesPage() {
 
   return (
     <>
-      <PageHeader title="قوالب الشيكات">
+      <PageHeader title="قوالب الشيكات" description="أماكن الكلام على كل نموذج شيك. افتح القالب عشان تحرك أي حقل.">
         <Link className="flex min-h-11 items-center font-semibold text-accent underline" to="/templates/compare">قارن شيكك بالنماذج</Link>
         <Button onClick={() => fileRef.current?.click()}>استيراد قالب</Button>
         <input ref={fileRef} type="file" accept=".json,application/json" className="sr-only" aria-label="ملف القالب" tabIndex={-1} onChange={(e) => void importFile(e.target.files?.[0])} />

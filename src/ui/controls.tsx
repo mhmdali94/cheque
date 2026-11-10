@@ -133,10 +133,13 @@ export function Notice({ tone, children }: { tone: 'danger' | 'warn' | 'info'; c
   return <div role={tone === 'danger' ? 'alert' : 'status'} className={`rounded-md px-3 py-2 text-sm font-semibold ${toneClass}`}>{children}</div>;
 }
 
-export function PageHeader({ title, children }: { title: string; children?: ReactNode }) {
+export function PageHeader({ title, description, children }: { title: string; description?: string; children?: ReactNode }) {
   return (
     <header className="mb-6 flex flex-wrap items-center justify-between gap-3">
-      <h1 className="text-2xl font-bold">{title}</h1>
+      <div>
+        <h1 className="text-2xl font-bold">{title}</h1>
+        {description && <p className="mt-1 max-w-2xl text-ink-soft">{description}</p>}
+      </div>
       {children && <div className="flex flex-wrap gap-2">{children}</div>}
     </header>
   );

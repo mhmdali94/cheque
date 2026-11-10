@@ -1,43 +1,52 @@
-import { useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { toArabicDigits } from '@/core/digits';
 import { db } from '@/db/schema';
 import { useCurrentCompany } from '@/state/useAppData';
 
-const NAV_ITEMS = [
+interface NavItem {
+  to: string;
+  label: string;
+  end?: boolean;
+}
+
+/** مسار الشغل الأساسي بالترتيب، وبعده باقي الأدوات. */
+const MAIN_ITEMS: NavItem[] = [
   { to: '/dashboard', label: 'الرئيسية' },
+  { to: '/accounts', label: 'الحسابات البنكية', end: true },
+  { to: '/accounts/new', label: 'إضافة حساب' },
   { to: '/cheque', label: 'كتابة شيك' },
-  { to: '/batch', label: 'دفعة من إكسل' },
+];
+
+const TOOL_ITEMS: NavItem[] = [
   { to: '/drafts', label: 'المسودات' },
   { to: '/history', label: 'السجل' },
-  { to: '/companies', label: 'الشركات والدفاتر' },
+  { to: '/batch', label: 'دفعة من إكسل' },
   { to: '/templates', label: 'قوالب الشيكات' },
   { to: '/printer', label: 'الطابعة والمعايرة' },
   { to: '/backup', label: 'النسخ الاحتياطي' },
   { to: '/settings', label: 'الإعدادات' },
 ];
 
-function NavItems({ onNavigate }: { onNavigate?: () => void }) {
+function NavEntry({ item }: { item: NavItem }) {
   return (
-    <nav aria-label="القائمة الرئيسية" className="flex flex-col gap-1">
-      {NAV_ITEMS.map((item) => (
-        <NavLink
-          key={item.to} to={item.to} onClick={onNavigate}
-          className={({ isActive }) =>
-            `flex min-h-11 items-center rounded-md px-3 text-sm font-semibold transition-colors duration-150 ${
-              isActive ? 'bg-accent-tint text-accent-strong' : 'text-ink-soft hover:bg-sunken hover:text-ink'
-            }`
-          }
-        >
-          {item.label}
-        </NavLink>
-      ))}
-    </nav>
+    <NavLink
+      to={item.to} end={item.end}
+      className={({ isActive }) =>
+        `relative flex h-11 shrink-0 items-center whitespace-nowrap px-3 text-sm font-semibold transition-colors duration-150 ${
+          isActive
+            ? 'text-accent-strong after:absolute after:inset-x-2 after:bottom-0 after:h-0.5 after:rounded-full after:bg-accent'
+            : 'text-ink-soft hover:text-ink'
+        }`
+      }
+    >
+      {item.label}
+    </NavLink>
   );
 }
 
-function CompanyBand({ onMenu }: { onMenu: () => void }) {
+function CompanyBand() {
   const { companies, company, selectCompany } = useCurrentCompany();
   const navigate = useNavigate();
   const { pathname } = useLocation();
@@ -49,16 +58,13 @@ function CompanyBand({ onMenu }: { onMenu: () => void }) {
   };
 
   return (
-    <div className="sticky top-0 z-40 flex min-h-13 items-center gap-3 px-4 text-white" style={{ background: company?.color }}>
-      <button type="button" className="min-h-11 rounded-md px-2 text-sm font-semibold hover:bg-white/15 lg:hidden" onClick={onMenu}>
-        القائمة
-      </button>
-      <p className="hidden text-lg font-bold lg:block">شيكاتي</p>
+    <div className="flex h-13 items-center gap-3 px-4 text-white" style={{ background: company?.color }}>
+      <Link to="/dashboard" className="text-lg font-bold">شيكاتي</Link>
       <label className="ms-auto flex items-center gap-2 text-sm font-semibold">
         <span>الشركة</span>
         <select
           dir="rtl" value={company?.id ?? ''} onChange={(e) => void change(e.target.value)}
-          className="min-h-11 max-w-[60vw] rounded-md border border-white/40 bg-white/15 px-2 font-bold text-white [&>option]:text-black"
+          className="min-h-10 max-w-[55vw] rounded-md border border-white/40 bg-white/15 px-2 font-bold text-white [&>option]:text-black"
         >
           {companies?.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
@@ -86,17 +92,25 @@ function BackupReminder() {
 }
 
 export function Shell() {
-  const [menuOpen, setMenuOpen] = useState(false);
+  const navRef = useRef<HTMLElement>(null);
+  const { pathname } = useLocation();
+
+  // على الموبايل القائمة بتتحرك بالعرض، فالصفحة الحالية لازم تفضل ظاهرة.
+  useEffect(() => {
+    navRef.current?.querySelector('[aria-current="page"]')?.scrollIntoView({ inline: 'center', block: 'nearest' });
+  }, [pathname]);
+
   return (
     <div className="min-h-dvh">
-      <CompanyBand onMenu={() => setMenuOpen(!menuOpen)} />
-      {menuOpen && (
-        <div className="border-b border-rule bg-surface p-3 lg:hidden"><NavItems onNavigate={() => setMenuOpen(false)} /></div>
-      )}
-      <div className="lg:grid lg:grid-cols-[13rem_minmax(0,1fr)]">
-        <aside className="sticky top-13 hidden h-[calc(100dvh-3.25rem)] border-e border-rule p-3 lg:block"><NavItems /></aside>
-        <main className="min-w-0 px-4 py-6 lg:px-8"><BackupReminder /><Outlet /></main>
-      </div>
+      <header className="sticky top-0 z-40">
+        <CompanyBand />
+        <nav ref={navRef} aria-label="القائمة الرئيسية" className="no-scrollbar flex overflow-x-auto border-b border-rule bg-surface px-2">
+          {MAIN_ITEMS.map((item) => <NavEntry key={item.to} item={item} />)}
+          <span aria-hidden className="mx-2 my-3 w-px shrink-0 bg-rule-strong" />
+          {TOOL_ITEMS.map((item) => <NavEntry key={item.to} item={item} />)}
+        </nav>
+      </header>
+      <main className="mx-auto max-w-6xl px-4 py-6 lg:px-8"><BackupReminder /><Outlet /></main>
     </div>
   );
 }

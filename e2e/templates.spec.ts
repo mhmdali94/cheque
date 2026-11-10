@@ -66,10 +66,8 @@ test('تصدير القالب ثم استيراده', async ({ page }) => {
 
 test('بنك الإسكندرية الشخصي بنك مستقل في القوائم', async ({ page }) => {
   await completeSetup(page);
-  await page.getByRole('link', { name: 'الشركات والدفاتر' }).click();
-  const bank = page.getByLabel('البنك', { exact: true });
-  await expect(bank.locator('option', { hasText: 'بنك الإسكندرية (شخصي)' })).toHaveCount(1);
-  await bank.selectOption('بنك الإسكندرية (شخصي)');
+  await page.getByRole('link', { name: 'إضافة حساب', exact: true }).click();
+  await page.locator('label', { hasText: 'بنك الإسكندرية (شخصي)' }).click();
   await expect(page.getByLabel('نموذج الشيك').locator('option')).toHaveText(['نموذج ١']);
 });
 

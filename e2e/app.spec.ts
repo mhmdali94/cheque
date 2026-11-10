@@ -90,7 +90,7 @@ test('اختصار البحث والمسار غير الموجود', async ({ pa
   await page.keyboard.press('/');
   await expect(page.getByLabel('بحث')).toBeFocused();
   await page.goto('/مسار-غير-موجود');
-  await expect(page.getByRole('img', { name: 'معاينة الشيك' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /أهلاً/ })).toBeVisible();
 });
 
 test.describe('بدون ملفات مخزنة', () => {
@@ -151,4 +151,66 @@ test('وصول إصدار جديد يعيد تحميل الصفحة مرة وا�
   ]);
   await expect(page.getByRole('img', { name: 'معاينة الشيك' })).toBeVisible();
   expect(await page.evaluate(() => (window as unknown as { __stale?: boolean }).__stale)).toBeUndefined();
+});
+
+const NAV_ORDER = ['الرئيسية', 'الحسابات البنكية', 'إضافة حساب', 'كتابة شيك'];
+
+test('القائمة ثابتة فوق وبالترتيب المطلوب', async ({ page }) => {
+  await completeSetup(page);
+  const nav = page.getByRole('navigation', { name: 'القائمة الرئيسية' });
+  await expect(nav.getByRole('link')).toHaveText([...NAV_ORDER, 'المسودات', 'السجل', 'دفعة من إكسل', 'قوالب الشيكات', 'الطابعة والمعايرة', 'النسخ الاحتياطي', 'الإعدادات']);
+  await page.goto('/printer');
+  await expect(page.getByRole('heading', { name: 'طابعة تانية' })).toBeVisible();
+  await page.evaluate(() => window.scrollTo(0, 1500));
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(500);
+  const box = await nav.boundingBox();
+  expect(box!.y).toBeLessThan(80);
+});
+
+test('الرئيسية فيها الملخص والخطوات والمساعدة', async ({ page }) => {
+  await completeSetup(page);
+  await writeCheque(page, 'مؤسسة الفجر', '2500');
+  await page.waitForTimeout(500);
+  await page.goto('/');
+  await expect(page).toHaveURL(/\/dashboard$/);
+  await expect(page.getByRole('region', { name: 'ملخص الأسبوع' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /ابدأ من هنا/ })).toBeVisible();
+  await page.getByText('إزاي أكتب شيك؟').click();
+  await expect(page.getByText('التفقيط بيتكتب لوحده، والشيك بيتحفظ', { exact: false })).toBeVisible();
+  expect(await visibleLatinText(page)).toEqual([]);
+  if (SHOTS) await page.screenshot({ path: `${SHOTS}/home.png`, fullPage: true });
+});
+
+test('إضافة حساب بدفتر يظهر في صفحة الحسابات', async ({ page }) => {
+  await completeSetup(page);
+  await page.getByRole('link', { name: 'إضافة حساب', exact: true }).click();
+  await expect(page.getByRole('radio')).toHaveCount(3);
+  await page.locator('label', { hasText: /^بنك الإسكندرية$/ }).click();
+  await page.getByLabel('اسم مميز للحساب').fill('حساب المرتبات');
+  await page.getByLabel('أول رقم').fill('500');
+  await page.getByLabel('آخر رقم').fill('524');
+  expect(await visibleLatinText(page)).toEqual([]);
+  if (SHOTS) await page.screenshot({ path: `${SHOTS}/add-account.png`, fullPage: true });
+  await page.getByRole('button', { name: 'حفظ الحساب' }).click();
+  await expect(page).toHaveURL(/\/accounts$/);
+  await expect(page.getByRole('heading', { name: 'بنك الإسكندرية', exact: true })).toBeVisible();
+  await expect(page.getByText('حساب المرتبات')).toBeVisible();
+  await expect(page.getByText(/من ٥٠٠ إلى ٥٢٤/)).toBeVisible();
+  if (SHOTS) await page.screenshot({ path: `${SHOTS}/accounts.png`, fullPage: true });
+});
+
+test.describe('القائمة على الموبايل', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true });
+
+  test('الصفحة ما بتتحركش بالعرض', async ({ page }) => {
+    await completeSetup(page);
+    for (const path of ['/dashboard', '/accounts', '/accounts/new', '/cheque']) {
+      await page.goto(path);
+      await page.waitForTimeout(200);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)).toBe(false);
+    }
+    await page.goto('/dashboard');
+    await page.waitForTimeout(300);
+    if (SHOTS) await page.screenshot({ path: `${SHOTS}/home-mobile.png`, fullPage: true });
+  });
 });

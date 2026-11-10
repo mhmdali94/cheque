@@ -8,6 +8,8 @@ export async function completeSetup(page: Page, { from = '100', to = '124' } = {
   await page.getByLabel('أول رقم في الدفتر').fill(from);
   await page.getByLabel('آخر رقم في الدفتر').fill(to);
   await page.getByRole('button', { name: 'ابدأ' }).click();
+  await expect(page.getByRole('heading', { name: /أهلاً/ })).toBeVisible();
+  await page.goto('/cheque');
   await expect(page.getByRole('img', { name: 'معاينة الشيك' })).toBeVisible();
 }
 

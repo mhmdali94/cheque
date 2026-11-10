@@ -39,7 +39,7 @@ export function SettingsPage() {
 
   return (
     <div className="flex max-w-md flex-col gap-5">
-      <PageHeader title="الإعدادات" />
+      <PageHeader title="الإعدادات" description="إعدادات الجهاز ده بس." />
       <TextInput
         label="اسم المحاسب على الجهاز ده" value={name} hint="بيظهر في السجل ونسخة المراجعة."
         onChange={(v) => { setName(v); void setSetting('accountantName', v.trim()); }}

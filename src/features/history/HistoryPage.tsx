@@ -144,7 +144,7 @@ export function HistoryPage() {
 
   return (
     <>
-      <PageHeader title="سجل الشيكات">
+      <PageHeader title="سجل الشيكات" description="كل الشيكات بحالاتها. دوّر بالمستفيد أو الرقم أو المبلغ.">
         <Button onClick={() => void exportExcel()} disabled={rows.length === 0}>تصدير إكسل</Button>
         <Button onClick={() => void printSelected()} disabled={selected.size === 0}>طباعة المختار للمراجعة ({toArabicDigits(selected.size)})</Button>
       </PageHeader>

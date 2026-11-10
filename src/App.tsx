@@ -2,7 +2,8 @@ import { Navigate, Route, Routes } from 'react-router';
 import { useCurrentCompany } from '@/state/useAppData';
 import { Shell } from '@/features/shell/Shell';
 import { SetupPage } from '@/features/companies/SetupPage';
-import { CompaniesPage } from '@/features/companies/CompaniesPage';
+import { AccountsPage } from '@/features/companies/AccountsPage';
+import { AddAccountPage } from '@/features/companies/AddAccountPage';
 import { ComposePage } from '@/features/compose/ComposePage';
 import { ReviewPage } from '@/features/compose/ReviewPage';
 import { DraftsPage } from '@/features/compose/DraftsPage';
@@ -25,11 +26,13 @@ export function App() {
   return (
     <Routes>
       <Route element={<Shell />}>
-        <Route index element={<Navigate to="/cheque" replace />} />
+        <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="cheque/:id?" element={<ComposePage />} />
         <Route path="cheque/:id/review" element={<ReviewPage />} />
         <Route path="drafts" element={<DraftsPage />} />
-        <Route path="companies" element={<CompaniesPage />} />
+        <Route path="accounts" element={<AccountsPage />} />
+        <Route path="accounts/new" element={<AddAccountPage />} />
+        <Route path="companies" element={<Navigate to="/accounts" replace />} />
         <Route path="templates" element={<TemplatesPage />} />
         <Route path="templates/compare" element={<ComparePage />} />
         <Route path="templates/:id" element={<TemplateEditorPage />} />
@@ -40,7 +43,7 @@ export function App() {
         <Route path="batch" element={<BatchPage />} />
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="settings" element={<SettingsPage />} />
-        <Route path="*" element={<Navigate to="/cheque" replace />} />
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Route>
     </Routes>
   );

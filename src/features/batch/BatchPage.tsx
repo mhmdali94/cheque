@@ -200,10 +200,10 @@ export function BatchPage() {
 
   return (
     <div className="flex max-w-3xl flex-col gap-5">
-      <PageHeader title="طباعة دفعة من إكسل">
+      <PageHeader title="طباعة دفعة من إكسل" description="كذا شيك مرة واحدة، وهتراجع كل الصفوف قبل أي طباعة.">
         <Button onClick={() => void downloadTemplate()}>نزّل قالب إكسل</Button>
       </PageHeader>
-      <p className="text-ink-soft">املا القالب بالمستفيد والمبلغ والتاريخ والبيان، وارفعه هنا. هتراجع كل الصفوف قبل أي طباعة.</p>
+      <p className="text-ink-soft">املا القالب بالمستفيد والمبلغ والتاريخ والبيان، وارفعه هنا.</p>
       <label className="inline-flex min-h-11 w-fit cursor-pointer items-center rounded-md border border-rule-strong bg-surface px-4 text-sm font-semibold hover:bg-sunken focus-within:outline-2 focus-within:outline-accent">
         ارفع ملف الشيكات
         <input type="file" accept=".xlsx" className="sr-only" aria-label="ملف إكسل" onChange={(e) => void pickFile(e.target.files?.[0])} />

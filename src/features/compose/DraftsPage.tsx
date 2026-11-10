@@ -29,7 +29,7 @@ export function DraftsPage() {
 
   return (
     <>
-      <PageHeader title="المسودات">
+      <PageHeader title="المسودات" description="الشيكات اللي لسه ما اتطبعتش. افتح أي واحد وكمّله من مكان ما وقفت.">
         <label className="flex min-h-11 items-center gap-2 text-sm">
           <input type="checkbox" className="size-5 accent-[var(--accent)]" checked={allCompanies} onChange={(e) => setAllCompanies(e.target.checked)} />
           كل الشركات

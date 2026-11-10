@@ -131,6 +131,20 @@
 }
 
 @layer components {
+  /* خطوط ورق الشيكات المؤمَّن، بنفس ألوان الوضع الفاتح والداكن */
+  .cheque-card {
+    background-color: var(--surface);
+    background-image: repeating-linear-gradient(32deg, transparent 0 5px, color-mix(in oklch, var(--accent) 7%, transparent) 5px 6px);
+  }
+
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
   /* دخول الحبر: تغيّر شفافية سريع عند ملء الحقل */
   .ink-in {
     animation: ink-in 220ms var(--ease-out-quart);

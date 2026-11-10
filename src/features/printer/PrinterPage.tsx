@@ -138,7 +138,7 @@ export function PrinterPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <PageHeader title="الطابعة والمعايرة" />
+      <PageHeader title="الطابعة والمعايرة" description="امشي على الخطوات بالترتيب مرة واحدة لكل جهاز بيطبع." />
       {message && <Notice tone="info">{message}</Notice>}
 
       <div className="grid max-w-3xl gap-4 md:grid-cols-2">

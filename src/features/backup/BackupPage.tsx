@@ -158,7 +158,7 @@ export function BackupPage() {
 
   return (
     <div className="flex max-w-2xl flex-col gap-10">
-      <PageHeader title="النسخ الاحتياطي والنقل" />
+      <PageHeader title="النسخ الاحتياطي والنقل" description="احفظ بياناتك في ملف، أو انقلها لجهاز زميلك." />
 
       <section className="flex flex-col gap-4">
         <h2 className="text-lg font-bold">عمل نسخة</h2>
