@@ -103,10 +103,13 @@ export function Shell() {
     <div className="min-h-dvh">
       <header className="sticky top-0 z-40">
         <CompanyBand />
-        <nav ref={navRef} aria-label="القائمة الرئيسية" className="no-scrollbar flex overflow-x-auto border-b border-rule bg-surface px-2">
-          {MAIN_ITEMS.map((item) => <NavEntry key={item.to} item={item} />)}
-          <span aria-hidden className="mx-2 my-3 w-px shrink-0 bg-rule-strong" />
-          {TOOL_ITEMS.map((item) => <NavEntry key={item.to} item={item} />)}
+        <nav ref={navRef} aria-label="القائمة الرئيسية" className="no-scrollbar overflow-x-auto border-b border-rule bg-surface px-2">
+          {/* الهوامش التلقائية بتوسّط القائمة، ولو الشاشة ضيقة بتبدأ من أولها وتتحرك بالعرض */}
+          <div className="mx-auto flex w-max">
+            {MAIN_ITEMS.map((item) => <NavEntry key={item.to} item={item} />)}
+            <span aria-hidden className="mx-2 my-3 w-px shrink-0 bg-rule-strong" />
+            {TOOL_ITEMS.map((item) => <NavEntry key={item.to} item={item} />)}
+          </div>
         </nav>
       </header>
       <main className="mx-auto max-w-6xl px-4 py-6 lg:px-8"><BackupReminder /><Outlet /></main>

@@ -120,6 +120,11 @@ test('القائمة ثابتة فوق وبالترتيب المطلوب', async
   await completeSetup(page);
   const nav = page.getByRole('navigation', { name: 'القائمة الرئيسية' });
   await expect(nav.getByRole('link')).toHaveText([...NAV_ORDER, 'المسودات', 'السجل', 'قوالب الشيكات', 'الطابعة والمعايرة', 'النسخ الاحتياطي', 'الإعدادات']);
+  const links = await nav.getByRole('link').evaluateAll((items) => items.map((item) => item.getBoundingClientRect()));
+  const gapRight = await page.evaluate(() => document.documentElement.clientWidth) - Math.max(...links.map((r) => r.right));
+  const gapLeft = Math.min(...links.map((r) => r.left));
+  expect(Math.abs(gapRight - gapLeft)).toBeLessThan(2);
+
   await page.goto('/printer');
   await expect(page.getByRole('heading', { name: 'طابعة تانية' })).toBeVisible();
   await page.evaluate(() => window.scrollTo(0, 1500));
@@ -172,6 +177,8 @@ test.describe('القائمة على الموبايل', () => {
     }
     await page.goto('/dashboard');
     await page.waitForTimeout(300);
+    // على الشاشة الضيقة القائمة بتتحرك بالعرض، وأول عنصر لازم يفضل ظاهر.
+    await expect(page.getByRole('link', { name: 'الرئيسية' })).toBeInViewport();
     if (SHOTS) await page.screenshot({ path: `${SHOTS}/home-mobile.png`, fullPage: true });
   });
 });
