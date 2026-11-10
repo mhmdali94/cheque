@@ -175,3 +175,34 @@ test.describe('القائمة على الموبايل', () => {
     if (SHOTS) await page.screenshot({ path: `${SHOTS}/home-mobile.png`, fullPage: true });
   });
 });
+
+test('مسح كل البيانات بيرجع الجهاز زي أول مرة بعد التأكيد', async ({ page }) => {
+  await completeSetup(page);
+  await writeCheque(page, 'شيك هيتمسح', '500');
+  await page.waitForTimeout(500);
+  await page.goto('/settings');
+  await page.getByRole('button', { name: 'مسح كل البيانات' }).click();
+  await expect(page.getByText(/هيتمسح نهائياً من الجهاز ده: ١ شيك/)).toBeVisible();
+  expect(await visibleLatinText(page)).toEqual([]);
+
+  const confirm = page.getByRole('button', { name: 'امسح كل حاجة نهائياً' });
+  await expect(confirm).toBeDisabled();
+  await page.getByLabel(/للتأكيد/).fill('كلمة غلط');
+  await expect(confirm).toBeDisabled();
+
+  await page.getByRole('button', { name: 'إلغاء' }).click();
+  await page.goto('/drafts');
+  await expect(page.getByRole('link', { name: /شيك هيتمسح/ })).toBeVisible();
+
+  await page.goto('/settings');
+  await page.getByRole('button', { name: 'مسح كل البيانات' }).click();
+  await page.getByLabel(/للتأكيد/).fill('امسح');
+  await page.getByRole('button', { name: 'امسح كل حاجة نهائياً' }).click();
+  await expect(page.getByLabel('اسم الشركة')).toBeVisible();
+
+  await page.reload();
+  await expect(page.getByLabel('اسم الشركة')).toBeVisible();
+  await completeSetup(page);
+  await page.goto('/drafts');
+  await expect(page.getByText('مفيش مسودات')).toBeVisible();
+});
