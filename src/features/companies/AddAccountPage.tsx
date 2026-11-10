@@ -49,7 +49,7 @@ export function AddAccountPage() {
 
   return (
     <>
-      <PageHeader title="إضافة حساب بنكي" description={company ? `حساب جديد لشركة ${company.name}.` : undefined} />
+      <PageHeader title="إضافة حساب بنكي" description={company ? `حساب جديد لشركة ${company.name}. لو عايز شركة تانية غيّرها من أعلى الشاشة.` : undefined} />
 
       <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <form onSubmit={(e) => void submit(e)} className="flex flex-col gap-8" noValidate>

@@ -14,6 +14,7 @@ interface NavItem {
 /** مسار الشغل الأساسي بالترتيب، وبعده باقي الأدوات. */
 const MAIN_ITEMS: NavItem[] = [
   { to: '/dashboard', label: 'الرئيسية' },
+  { to: '/companies', label: 'الشركات' },
   { to: '/accounts', label: 'الحسابات البنكية', end: true },
   { to: '/accounts/new', label: 'إضافة حساب' },
   { to: '/cheque', label: 'كتابة شيك' },

@@ -114,7 +114,7 @@ test('وصول إصدار جديد يعيد تحميل الصفحة مرة وا�
   expect(await page.evaluate(() => (window as unknown as { __stale?: boolean }).__stale)).toBeUndefined();
 });
 
-const NAV_ORDER = ['الرئيسية', 'الحسابات البنكية', 'إضافة حساب', 'كتابة شيك'];
+const NAV_ORDER = ['الرئيسية', 'الشركات', 'الحسابات البنكية', 'إضافة حساب', 'كتابة شيك'];
 
 test('القائمة ثابتة فوق وبالترتيب المطلوب', async ({ page }) => {
   await completeSetup(page);
@@ -214,10 +214,14 @@ test('مسح كل البيانات بيرجع الجهاز زي أول مرة ب
   await expect(page.getByText('مفيش مسودات')).toBeVisible();
 });
 
-test('تعديل اسم الشركة وإضافة شركة جديدة', async ({ page }) => {
+test('صفحة الشركات: تعديل وإضافة، وبعد الإضافة نكمّل بالحساب', async ({ page }) => {
   await completeSetup(page);
-  await page.getByRole('link', { name: 'الحسابات البنكية' }).click();
-  await page.getByRole('button', { name: 'تعديل اسم الشركة' }).click();
+  await page.getByRole('link', { name: 'الشركات', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'الشركات', exact: true })).toBeVisible();
+  if (SHOTS) await page.screenshot({ path: `${SHOTS}/companies.png`, fullPage: true });
+  expect(await visibleLatinText(page)).toEqual([]);
+
+  await page.getByRole('button', { name: 'تعديل' }).click();
   const name = page.getByLabel('اسم الشركة');
   await expect(name).toHaveValue('شركة النور للتجارة');
   await name.fill('');
@@ -232,7 +236,12 @@ test('تعديل اسم الشركة وإضافة شركة جديدة', async ({
   await page.getByRole('button', { name: 'شركة جديدة' }).click();
   await page.getByLabel('اسم الشركة').fill('شركة ثانية');
   await page.getByRole('button', { name: 'حفظ الشركة' }).click();
+  await expect(page).toHaveURL(/\/accounts\/new$/);
+  await expect(page.getByText(/حساب جديد لشركة شركة ثانية/)).toBeVisible();
   await expect(selector.locator('option')).toHaveCount(2);
-  await expect(page.getByRole('heading', { name: 'شركة ثانية' })).toBeVisible();
-  expect(await visibleLatinText(page)).toEqual([]);
+
+  await page.getByRole('link', { name: 'الشركات', exact: true }).click();
+  await page.getByRole('button', { name: 'افتح حسابات شركة النور الجديدة' }).click();
+  await expect(page).toHaveURL(/\/accounts$/);
+  await expect(page.getByRole('heading', { name: 'شركة النور الجديدة' })).toBeVisible();
 });

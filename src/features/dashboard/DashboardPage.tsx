@@ -34,6 +34,10 @@ function Row({ cheque }: { cheque: Cheque }) {
 
 const HELP_TOPICS: { question: string; answer: ReactNode }[] = [
   {
+    question: 'إزاي أضيف أو أعدّل شركة؟',
+    answer: <>من <Link className="underline" to="/companies">الشركات</Link> تقدر تضيف شركة جديدة أو تعدّل اسمها ولونها. بعد إضافة الشركة بنكمّل على طول بإضافة حسابها البنكي ودفتر الشيكات.</>,
+  },
+  {
     question: 'إزاي أكتب شيك؟',
     answer: <>افتح <Link className="underline" to="/cheque">كتابة شيك</Link>، واكتب المستفيد والمبلغ. التفقيط بيتكتب لوحده، والشيك بيتحفظ تلقائياً مع كل حرف. بعدها اضغط «راجع واطبع».</>,
   },

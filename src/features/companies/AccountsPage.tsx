@@ -1,88 +1,15 @@
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { formatNumber, parseAmount, toArabicDigits, toLatinDigits, type AmountProtection } from '@/core/digits';
-import { CUSTOM_PRESET_ID, resolveTafqeetOptions, TAFQEET_PRESETS, tafqeet } from '@/core/tafqeet';
-import type { BankAccount, ChequeBook, Company } from '@/core/types';
+import { formatNumber, toArabicDigits, toLatinDigits } from '@/core/digits';
+import type { BankAccount, ChequeBook } from '@/core/types';
 import { remainingInBook } from '@/db/repos';
 import { db } from '@/db/schema';
 import { useCurrentCompany } from '@/state/useAppData';
-import { Button, DigitInput, EmptyState, PageHeader, Select, TextInput } from '@/ui/controls';
-import { ColorPicker } from './ColorPicker';
-import { addBook, addCompany, COMPANY_COLORS, formatChequeNumber, parseBookRange } from './data';
-
-const PROTECTION_OPTIONS: { value: AmountProtection; label: string }[] = [
-  { value: 'slash', label: 'زي الشيكات: الرقم وبعده شرطة' },
-  { value: 'hash', label: 'بين علامتي #' },
-  { value: 'star', label: 'بين علامات نجمة' },
-];
+import { Button, DigitInput, EmptyState, PageHeader } from '@/ui/controls';
+import { addBook, formatChequeNumber, parseBookRange } from './data';
 
 const LOW_BOOK_THRESHOLD = 5;
-
-function NewCompanyForm({ onDone }: { onDone: () => void }) {
-  const [name, setName] = useState('');
-  const [color, setColor] = useState(COMPANY_COLORS[1].value);
-  const [error, setError] = useState('');
-
-  const submit = async (event: FormEvent) => {
-    event.preventDefault();
-    if (!name.trim()) { setError('اكتب اسم الشركة'); return; }
-    await addCompany(name, color);
-    onDone();
-  };
-
-  return (
-    <form onSubmit={(e) => void submit(e)} className="mb-8 flex max-w-lg flex-col gap-4 rounded-md border border-rule bg-surface p-4" noValidate>
-      <TextInput label="اسم الشركة" value={name} onChange={setName} error={error} autoFocus hint="الشركة صاحبة دفتر الشيكات." />
-      <ColorPicker value={color} onChange={setColor} />
-      <div className="flex gap-2">
-        <Button type="submit" variant="primary">حفظ الشركة</Button>
-        <Button variant="ghost" onClick={onDone}>إلغاء</Button>
-      </div>
-    </form>
-  );
-}
-
-function CompanyHeading({ company, canEdit }: { company: Company; canEdit: boolean }) {
-  const [editing, setEditing] = useState(false);
-  const [name, setName] = useState(company.name);
-  const [color, setColor] = useState(company.color);
-  const [error, setError] = useState('');
-
-  const open = () => {
-    setName(company.name);
-    setColor(company.color);
-    setError('');
-    setEditing(true);
-  };
-
-  const submit = async (event: FormEvent) => {
-    event.preventDefault();
-    if (!name.trim()) { setError('اكتب اسم الشركة'); return; }
-    await db.companies.update(company.id, { name: name.trim(), color, updatedAt: Date.now() });
-    setEditing(false);
-  };
-
-  if (editing && canEdit) {
-    return (
-      <form onSubmit={(e) => void submit(e)} className="mb-6 flex max-w-lg flex-col gap-4 rounded-md border border-rule bg-surface p-4" noValidate>
-        <TextInput label="اسم الشركة" value={name} onChange={setName} error={error} autoFocus hint="الاسم الجديد بيظهر في كل الشاشات. الشيكات المطبوعة مش بتتأثر." />
-        <ColorPicker value={color} onChange={setColor} />
-        <div className="flex gap-2">
-          <Button type="submit" variant="primary">حفظ التعديل</Button>
-          <Button variant="ghost" onClick={() => setEditing(false)}>إلغاء</Button>
-        </div>
-      </form>
-    );
-  }
-
-  return (
-    <div className="mb-4 flex flex-wrap items-center gap-2">
-      <h2 className="text-lg font-bold">{company.name}</h2>
-      {canEdit && <Button variant="ghost" onClick={open}>تعديل اسم الشركة</Button>}
-    </div>
-  );
-}
 
 function BookRow({ book, remaining }: { book: ChequeBook; remaining: number }) {
   const total = book.toNumber - book.fromNumber + 1;
@@ -163,41 +90,8 @@ function AccountCard({ account, books }: { account: BankAccount; books: { book: 
   );
 }
 
-function CompanyPreferences({ company }: { company: Company }) {
-  const update = (patch: Partial<Company>) => db.companies.update(company.id, { ...patch, updatedAt: Date.now() });
-  const [limit, setLimit] = useState(company.amountLimit ? String(company.amountLimit) : '');
-  const sample = tafqeet(148500, resolveTafqeetOptions(company.tafqeetPresetId, company.customPattern || '{المبلغ}'));
-
-  return (
-    <div className="grid gap-4 pt-3 md:grid-cols-2">
-      <Select label="صيغة التفقيط" value={company.tafqeetPresetId} onChange={(v) => void update({ tafqeetPresetId: v })} hint={`مثال: ${sample}`}>
-        {TAFQEET_PRESETS.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-        <option value={CUSTOM_PRESET_ID}>صيغة مخصصة</option>
-      </Select>
-      {company.tafqeetPresetId === CUSTOM_PRESET_ID && (
-        <TextInput
-          label="الصيغة المخصصة" value={company.customPattern ?? ''} onChange={(v) => void update({ customPattern: v })}
-          hint="استخدم {المبلغ} للعدد و{العملة} لكلمة الجنيه حسب العدد."
-        />
-      )}
-      <Select label="حماية المبلغ بالأرقام" value={company.amountProtection} onChange={(v) => void update({ amountProtection: v as AmountProtection })}>
-        {PROTECTION_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-      </Select>
-      <DigitInput
-        label="نبّهني لو المبلغ أكبر من" value={limit} hint="اختياري."
-        onChange={(v) => {
-          setLimit(v);
-          const parsed = parseAmount(v);
-          void update({ amountLimit: parsed.ok ? parsed.value : undefined });
-        }}
-      />
-    </div>
-  );
-}
-
 export function AccountsPage() {
   const { company } = useCurrentCompany();
-  const [addingCompany, setAddingCompany] = useState(false);
 
   const accounts = useLiveQuery(() => (company ? db.accounts.where('companyId').equals(company.id).toArray() : []), [company?.id]);
   const books = useLiveQuery(async () => {
@@ -210,12 +104,14 @@ export function AccountsPage() {
     <>
       <PageHeader title="الحسابات البنكية" description="كل حساب ودفاتر الشيكات اللي عليه، وكام ورقة باقية في كل دفتر.">
         <Link to="/accounts/new" className="flex min-h-11 items-center rounded-md bg-accent px-4 text-sm font-semibold text-on-accent hover:bg-accent-strong">إضافة حساب جديد</Link>
-        <Button onClick={() => setAddingCompany(true)}>شركة جديدة</Button>
       </PageHeader>
 
-      {addingCompany && <NewCompanyForm onDone={() => setAddingCompany(false)} />}
-
-      {company && <CompanyHeading key={company.id} company={company} canEdit={!addingCompany} />}
+      {company && (
+        <div className="mb-4 flex flex-wrap items-baseline gap-3">
+          <h2 className="text-lg font-bold">{company.name}</h2>
+          <Link to="/companies" className="text-sm font-semibold text-accent underline">تغيير الشركة</Link>
+        </div>
+      )}
 
       {accounts?.length === 0 && (
         <EmptyState title="لسه مفيش حسابات للشركة دي" action={<Link className="font-semibold text-accent underline" to="/accounts/new">أضف أول حساب</Link>}>
@@ -228,13 +124,6 @@ export function AccountsPage() {
           <AccountCard key={account.id} account={account} books={books?.filter((b) => b.book.accountId === account.id) ?? []} />
         ))}
       </div>
-
-      {company && (
-        <details className="group mt-8 border-t border-rule pt-3">
-          <summary className="flex min-h-11 items-center font-bold">صيغ الكتابة للشركة دي (التفقيط وحماية المبلغ)<span aria-hidden className="ms-auto text-lg text-ink-soft transition-transform duration-150 group-open:rotate-45">+</span></summary>
-          <CompanyPreferences key={company.id} company={company} />
-        </details>
-      )}
     </>
   );
 }

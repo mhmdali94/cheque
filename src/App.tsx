@@ -3,6 +3,7 @@ import { useCurrentCompany } from '@/state/useAppData';
 import { Shell } from '@/features/shell/Shell';
 import { SetupPage } from '@/features/companies/SetupPage';
 import { AccountsPage } from '@/features/companies/AccountsPage';
+import { CompaniesPage } from '@/features/companies/CompaniesPage';
 import { AddAccountPage } from '@/features/companies/AddAccountPage';
 import { ComposePage } from '@/features/compose/ComposePage';
 import { ReviewPage } from '@/features/compose/ReviewPage';
@@ -31,7 +32,7 @@ export function App() {
         <Route path="drafts" element={<DraftsPage />} />
         <Route path="accounts" element={<AccountsPage />} />
         <Route path="accounts/new" element={<AddAccountPage />} />
-        <Route path="companies" element={<Navigate to="/accounts" replace />} />
+        <Route path="companies" element={<CompaniesPage />} />
         <Route path="templates" element={<TemplatesPage />} />
         <Route path="templates/compare" element={<ComparePage />} />
         <Route path="templates/:id" element={<TemplateEditorPage />} />
