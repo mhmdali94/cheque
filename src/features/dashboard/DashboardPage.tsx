@@ -36,7 +36,7 @@ function Row({ cheque }: { cheque: Cheque }) {
 const HELP_TOPICS: { question: string; answer: ReactNode }[] = [
   {
     question: 'إزاي أضيف أو أعدّل شركة؟',
-    answer: <>من <Link className="underline" to="/companies">الشركات</Link> تقدر تضيف شركة جديدة أو تعدّل اسمها ولونها. بعد إضافة الشركة بنكمّل على طول بإضافة حسابها البنكي ودفتر الشيكات.</>,
+    answer: <>التطبيق بيبدأ بشركة اسمها «شركتي». من <Link className="underline" to="/companies">الشركات</Link> تقدر تعدّل اسمها ولونها، أو تضيف شركة جديدة. بعد إضافة الشركة بنكمّل على طول بإضافة حسابها البنكي ودفتر الشيكات.</>,
   },
   {
     question: 'إزاي أكتب شيك؟',
@@ -132,6 +132,11 @@ export function DashboardPage() {
       <header>
         <h1 className="text-2xl font-bold">أهلاً{data.accountant && `، ${data.accountant}`}</h1>
         <p className="text-ink-soft">{formatDateLong(todayIso())}</p>
+        {!data.accountant && (
+          <p className="mt-2 text-sm text-ink-soft">
+            <Link className="font-semibold text-accent underline" to="/settings">اكتب اسمك</Link> عشان يظهر في السجل ونسخة المراجعة.
+          </p>
+        )}
       </header>
 
       {/* ملخص الأسبوع مكتوب كأنه شيك */}

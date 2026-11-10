@@ -208,10 +208,10 @@ test('مسح كل البيانات بيرجع الجهاز زي أول مرة ب
   await page.getByRole('button', { name: 'مسح كل البيانات' }).click();
   await page.getByLabel(/للتأكيد/).fill('امسح');
   await page.getByRole('button', { name: 'امسح كل حاجة نهائياً' }).click();
-  await expect(page.getByLabel('اسم الشركة')).toBeVisible();
+  await expect(page.getByRole('combobox', { name: 'الشركة' }).locator('option')).toHaveText(['شركتي']);
 
   await page.reload();
-  await expect(page.getByLabel('اسم الشركة')).toBeVisible();
+  await expect(page.getByRole('heading', { name: /أهلاً/ })).toBeVisible();
   await completeSetup(page);
   await page.goto('/drafts');
   await expect(page.getByText('مفيش مسودات')).toBeVisible();
@@ -249,11 +249,21 @@ test('صفحة الشركات: تعديل وإضافة، وبعد الإضافة
   await expect(page.getByRole('heading', { name: 'شركة النور الجديدة' })).toBeVisible();
 });
 
-test('أول فتح بيعرض البانر فوق نموذج البداية', async ({ page }) => {
+test('أول فتح بيدخل على الرئيسية مباشرة', async ({ page }) => {
   await page.goto('/');
+  await expect(page).toHaveURL(/\/dashboard$/);
+  await expect(page.getByRole('heading', { name: /أهلاً/ })).toBeVisible();
+  await expect(page.getByLabel('اسم الشركة')).toHaveCount(0);
+  await expect(page.getByRole('combobox', { name: 'الشركة' }).locator('option')).toHaveText(['شركتي']);
   const banner = page.getByRole('img', { name: /شيكاتك مكتوبة صح/ });
   await expect(banner).toBeVisible();
   await expect.poll(() => banner.evaluate((image: HTMLImageElement) => image.naturalWidth)).toBeGreaterThan(0);
-  await expect(page.getByLabel('اسم الشركة')).toBeVisible();
-  if (SHOTS) await page.screenshot({ path: `${SHOTS}/setup.png` });
+  await expect(page.getByRole('link', { name: 'اكتب اسمك' })).toBeVisible();
+  expect(await visibleLatinText(page)).toEqual([]);
+});
+
+test('من غير دفتر، كتابة شيك بتوجّه لتسجيل الدفتر', async ({ page }) => {
+  await page.goto('/cheque');
+  await expect(page.getByText('مفيش دفتر شيكات للشركة دي')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'سجّل دفتر' })).toBeVisible();
 });

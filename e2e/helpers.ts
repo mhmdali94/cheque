@@ -1,14 +1,30 @@
 import { expect, type Page } from '@playwright/test';
 
-/** أول إعداد: شركة ودفتر بأرقام لاتينية، عشان نتأكد إنها بتتعرض عربي. */
+/** يجهّز جهاز جديد عن طريق الصفحات العادية: اسم المحاسب، الشركة، وحساب بدفتر. */
 export async function completeSetup(page: Page, { from = '100', to = '124' } = {}) {
   await page.goto('/');
-  await page.getByLabel('اسمك').fill('سارة أحمد');
-  await page.getByLabel('اسم الشركة').fill('شركة النور للتجارة');
-  await page.getByLabel('أول رقم في الدفتر').fill(from);
-  await page.getByLabel('آخر رقم في الدفتر').fill(to);
-  await page.getByRole('button', { name: 'ابدأ' }).click();
   await expect(page.getByRole('heading', { name: /أهلاً/ })).toBeVisible();
+
+  await page.goto('/settings');
+  const accountant = page.getByLabel('اسم المحاسب على الجهاز ده');
+  await expect(accountant).toBeVisible();
+  await page.waitForTimeout(150);
+  await accountant.fill('سارة أحمد');
+  await page.waitForTimeout(100);
+
+  await page.goto('/companies');
+  await page.getByRole('button', { name: 'تعديل' }).click();
+  await page.getByLabel('اسم الشركة').fill('شركة النور للتجارة');
+  await page.getByRole('button', { name: 'حفظ التعديل' }).click();
+  await expect(page.getByRole('heading', { name: 'شركة النور للتجارة' })).toBeVisible();
+
+  await page.goto('/accounts/new');
+  await expect(page.getByRole('radio').first()).toBeAttached();
+  await page.getByLabel('أول رقم').fill(from);
+  await page.getByLabel('آخر رقم').fill(to);
+  await page.getByRole('button', { name: 'حفظ الحساب' }).click();
+  await expect(page).toHaveURL(/\/accounts$/);
+
   await page.goto('/cheque');
   await expect(page.getByRole('img', { name: 'معاينة الشيك' })).toBeVisible();
 }

@@ -3,7 +3,7 @@ import ExcelJS from 'exceljs';
 import { builtinTemplates } from '@/core/templates';
 import type { Calibration, Cheque, Company } from '@/core/types';
 import { ShikatyDB } from '@/db/schema';
-import { ensureSeeded } from '@/db/seed';
+import { ensureDefaultCompany, ensureSeeded } from '@/db/seed';
 import { decryptText, encryptText, sha256Hex, WrongPasswordError } from './crypto';
 import { ARABIC_NUMBER_FORMAT, createChequesWorkbook } from './excel';
 import { applyMerge, BackupError, collectBackup, packBackup, planMerge, readBackupHeader, replaceAll, unpackBackup } from './format';
@@ -123,6 +123,35 @@ describe('النسخة الاحتياطية', () => {
     await replaceAll(await collectBackup(null, source), target);
     expect(await target.companies.get('old')).toBeUndefined();
     expect((await target.settings.get('deviceId'))?.value).toBe('mine');
+  });
+});
+
+describe('الشركة المبدئية', () => {
+  it('الفاضية بتتشال بعد استيراد شركات حقيقية', async () => {
+    const fresh = new ShikatyDB(`test-${crypto.randomUUID()}`);
+    await fresh.open();
+    await ensureDefaultCompany(fresh);
+    const defaultId = (await fresh.companies.toArray())[0].id;
+    await applyMerge(await planMerge(await collectBackup('c1', source), fresh), fresh);
+    expect(await fresh.companies.get(defaultId)).toBeUndefined();
+    expect(await fresh.companies.get('c1')).toBeDefined();
+  });
+
+  it('لو اتكتب عليها شيك بتفضل', async () => {
+    const fresh = new ShikatyDB(`test-${crypto.randomUUID()}`);
+    await fresh.open();
+    await ensureDefaultCompany(fresh);
+    const defaultId = (await fresh.companies.toArray())[0].id;
+    await fresh.cheques.add(cheque('own', { companyId: defaultId }));
+    await applyMerge(await planMerge(await collectBackup('c1', source), fresh), fresh);
+    expect(await fresh.companies.get(defaultId)).toBeDefined();
+  });
+
+  it('مرة واحدة حتى لو اتنادت مرتين مع بعض', async () => {
+    const fresh = new ShikatyDB(`test-${crypto.randomUUID()}`);
+    await fresh.open();
+    await Promise.all([ensureDefaultCompany(fresh), ensureDefaultCompany(fresh)]);
+    expect(await fresh.companies.count()).toBe(1);
   });
 });
 

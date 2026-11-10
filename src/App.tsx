@@ -1,7 +1,8 @@
+import { useEffect } from 'react';
 import { Navigate, Route, Routes } from 'react-router';
+import { ensureDefaultCompany } from '@/db/seed';
 import { useCurrentCompany } from '@/state/useAppData';
 import { Shell } from '@/features/shell/Shell';
-import { SetupPage } from '@/features/companies/SetupPage';
 import { AccountsPage } from '@/features/companies/AccountsPage';
 import { CompaniesPage } from '@/features/companies/CompaniesPage';
 import { AddAccountPage } from '@/features/companies/AddAccountPage';
@@ -20,8 +21,12 @@ import { SettingsPage } from '@/features/settings/SettingsPage';
 
 export function App() {
   const { companies } = useCurrentCompany();
-  if (companies === undefined) return null;
-  if (companies.length === 0) return <SetupPage />;
+  // أول فتح بيدخل على الرئيسية مباشرة، بشركة مبدئية المحاسب يقدر يعدّلها.
+  useEffect(() => {
+    if (companies?.length === 0) void ensureDefaultCompany();
+  }, [companies?.length]);
+
+  if (!companies?.length) return null;
 
   return (
     <Routes>

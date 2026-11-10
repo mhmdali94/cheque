@@ -6,6 +6,7 @@ import type {
 } from '@/core/types';
 import { DATA_VERSION, db, type ShikatyDB } from '@/db/schema';
 import { getDeviceId } from '@/db/repos';
+import { DEFAULT_COMPANY_KEY } from '@/db/seed';
 import { base64ToBlob, blobToBase64 } from '@/ui/download';
 import { decryptText, encryptText, sha256Hex, type EncryptedPayload } from './crypto';
 
@@ -259,7 +260,23 @@ export async function applyMerge(plan: MergePlan, database: ShikatyDB = db): Pro
     await database.calibrations.bulkPut(t.calibrations);
     await database.auditLog.bulkPut(t.auditLog);
     await database.settings.bulkPut(t.settings);
+    await removeUnusedDefaultCompany(database);
   });
+}
+
+/** الشركة المبدئية لو لسه فاضية ما تفضلش جنب الشركات المستوردة. */
+async function removeUnusedDefaultCompany(database: ShikatyDB): Promise<void> {
+  const id = (await database.settings.get(DEFAULT_COMPANY_KEY))?.value as string | undefined;
+  if (!id || (await database.companies.count()) < 2) return;
+  const [accounts, cheques] = await Promise.all([
+    database.accounts.where('companyId').equals(id).count(),
+    database.cheques.where('companyId').equals(id).count(),
+  ]);
+  if (accounts > 0 || cheques > 0) return;
+  await database.companies.delete(id);
+  await database.settings.delete(DEFAULT_COMPANY_KEY);
+  const current = await database.settings.get('currentCompanyId');
+  if (current?.value === id) await database.settings.delete('currentCompanyId');
 }
 
 /** استبدال الكل: اسم المحاسب ومعرّف الجهاز يفضلوا زي ما هم. */

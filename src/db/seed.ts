@@ -16,6 +16,22 @@ export const TOSHIBA_PROFILE: PrinterProfile = {
   updatedAt: 0,
 };
 
+export const DEFAULT_COMPANY_KEY = 'defaultCompanyId';
+const DEFAULT_COMPANY_COLOR = 'oklch(0.4 0.09 165)';
+
+/** شركة مبدئية لأول فتح، عشان التطبيق يدخل على الرئيسية من غير نموذج. */
+export async function ensureDefaultCompany(database: ShikatyDB = db): Promise<void> {
+  await database.transaction('rw', database.companies, database.settings, async () => {
+    if ((await database.companies.count()) > 0) return;
+    const now = Date.now();
+    const id = crypto.randomUUID();
+    await database.companies.add({
+      id, name: 'شركتي', color: DEFAULT_COMPANY_COLOR, tafqeetPresetId: 'accounting', amountProtection: 'slash', createdAt: now, updatedAt: now,
+    });
+    await database.settings.bulkPut([{ key: DEFAULT_COMPANY_KEY, value: id }, { key: 'currentCompanyId', value: id }]);
+  });
+}
+
 const PERSONAL_TEMPLATE_ID = 'tpl-alex-personal';
 /** لازم الشيك الشخصي يطابق الإسكندرية حتى لو نسخة قديمة منه اتحفظت كمضبوطة، مرة واحدة بس. */
 const PERSONAL_RESET_KEY = 'reset:tpl-alex-personal:1';
