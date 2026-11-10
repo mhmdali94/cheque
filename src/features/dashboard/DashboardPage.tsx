@@ -126,6 +126,15 @@ export function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-10">
+      <picture>
+        <source media="(max-width: 640px)" srcSet="/banner/shikaty-banner-square.jpg" width={1080} height={1080} />
+        <img
+          src="/banner/shikaty-banner-wide.jpg" width={2400} height={800} decoding="async"
+          alt="شيكاتي: شيكاتك مكتوبة صح، ومطبوعة في مكانها بالمليمتر"
+          className="block h-auto w-full rounded-lg"
+        />
+      </picture>
+
       <header>
         <h1 className="text-2xl font-bold">أهلاً{data.accountant && `، ${data.accountant}`}</h1>
         <p className="text-ink-soft">{formatDateLong(todayIso())}</p>

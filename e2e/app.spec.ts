@@ -140,6 +140,9 @@ test('الرئيسية فيها الملخص والخطوات والمساعدة
   await page.goto('/');
   await expect(page).toHaveURL(/\/dashboard$/);
   await expect(page.getByRole('region', { name: 'ملخص الأسبوع' })).toBeVisible();
+  const banner = page.getByRole('img', { name: /شيكاتك مكتوبة صح/ });
+  await expect(banner).toBeVisible();
+  expect(await banner.evaluate((image: HTMLImageElement) => image.naturalWidth)).toBeGreaterThan(0);
   await expect(page.getByRole('heading', { name: /ابدأ من هنا/ })).toBeVisible();
   await page.getByText('إزاي أكتب شيك؟').click();
   await expect(page.getByText('التفقيط بيتكتب لوحده، والشيك بيتحفظ', { exact: false })).toBeVisible();
