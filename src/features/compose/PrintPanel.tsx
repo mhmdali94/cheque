@@ -83,7 +83,9 @@ export function PrintPanel({ cheque, view }: { cheque: Cheque; view: ChequeView 
   const filename = `شيك ${toArabicDigits(numberLabel ?? '')}.pdf`;
 
   const allChecked = CHECKLIST.every((_, i) => checks[i]) && numberMatches;
-  const canPrint = Boolean(pdf) && allChecked
+  // الشيك اللي لسه مسودة ما ينفعش يتطبع بتاريخ فات، وإعادة طباعة المطبوع مسموحة.
+  const datePassed = cheque.status === 'draft' && cheque.date < todayIso();
+  const canPrint = Boolean(pdf) && allChecked && !datePassed
     && (blocking.length === 0 || confirmBlocking)
     && (Boolean(trialDone) || skipTrial)
     && (!isReprint || confirmReprint);
@@ -162,6 +164,12 @@ export function PrintPanel({ cheque, view }: { cheque: Cheque; view: ChequeView 
     <section aria-label="الطباعة" className="mt-6 flex flex-col gap-4">
       {warnings.filter((w) => !view.warnings.includes(w)).map((w) => <Notice key={w.id} tone="warn">{w.message}</Notice>)}
       {failed && <Notice tone="danger">تعذر تجهيز ملف الطباعة. أعد فتح الصفحة.</Notice>}
+      {datePassed && (
+        <Notice tone="danger">
+          تاريخ الشيك ده فات، فمش ممكن يتطبع.{' '}
+          <Link className="underline" to={`/cheque/${cheque.id}`}>عدّل التاريخ</Link>
+        </Notice>
+      )}
 
       {!isClosed && (
         <>

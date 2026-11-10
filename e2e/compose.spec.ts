@@ -70,3 +70,55 @@ test.describe('موبايل', () => {
     if (SHOTS) await page.screenshot({ path: `${SHOTS}/compose-mobile.png`, fullPage: true });
   });
 });
+
+test.describe('منع التاريخ الفائت', () => {
+  const dayButton = (page: import('@playwright/test').Page, label: string) => page.getByRole('button', { name: label, exact: true });
+
+  test('الأيام الفايتة مقفولة، والنهارده والجاي مسموح', async ({ page }) => {
+    await page.clock.setFixedTime(new Date('2026-11-10T10:00:00'));
+    await completeSetup(page);
+    await page.getByRole('button', { name: /التاريخ/ }).click();
+    await expect(page.getByRole('button', { name: 'الشهر السابق' })).toBeDisabled();
+    await expect(dayButton(page, '٩ نوفمبر')).toHaveAttribute('aria-disabled', 'true');
+
+    // المحاسب ممكن يضغط على يوم مقفول، والمفروض مفيش حاجة تحصل.
+    await dayButton(page, '٩ نوفمبر').click({ force: true });
+    await expect(page.getByRole('dialog', { name: 'التاريخ' })).toBeVisible();
+    await expect(page.getByRole('button', { name: /التاريخ/ })).toContainText('١٠/١١/٢٠٢٦');
+
+    await dayButton(page, '١١ نوفمبر').click();
+    await expect(page.getByRole('button', { name: /التاريخ/ })).toContainText('١١/١١/٢٠٢٦');
+  });
+
+  test('مسودة تاريخها فات ما تتراجعش ولا تتطبع لحد ما يتعدل', async ({ page }) => {
+    await page.clock.setFixedTime(new Date('2026-11-10T10:00:00'));
+    await completeSetup(page);
+    await writeCheque(page, 'مسودة قديمة', '700');
+    await expect(page).toHaveURL(/\/cheque\/[0-9a-f-]{36}$/);
+    const url = page.url();
+    await page.waitForTimeout(500);
+
+    await page.clock.setFixedTime(new Date('2026-11-12T10:00:00'));
+    await page.goto(url);
+    await expect(page.getByText('تاريخ الشيك ده فات. اختار النهارده أو يوم جاي.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'راجع واطبع' }).locator('visible=true')).toBeDisabled();
+
+    await page.goto(`${url}/review`);
+    await expect(page.getByText(/فات، فمش ممكن يتطبع/)).toBeVisible();
+    await expect(page.getByRole('button', { name: 'اطبع على الشيك' })).toBeDisabled();
+
+    await page.goto(url);
+    await page.getByRole('button', { name: /التاريخ/ }).click();
+    await page.getByRole('button', { name: 'النهارده' }).click();
+    await expect(page.getByRole('button', { name: 'راجع واطبع' }).locator('visible=true')).toBeEnabled();
+  });
+
+  test('فلاتر السجل لسه بتقبل تواريخ قديمة', async ({ page }) => {
+    await page.clock.setFixedTime(new Date('2026-11-10T10:00:00'));
+    await completeSetup(page);
+    await page.goto('/history');
+    await page.getByRole('button', { name: /من تاريخ/ }).click();
+    await expect(page.getByRole('button', { name: 'الشهر السابق' })).toBeEnabled();
+    await expect(dayButton(page, '٩ نوفمبر')).not.toHaveAttribute('aria-disabled', 'true');
+  });
+});

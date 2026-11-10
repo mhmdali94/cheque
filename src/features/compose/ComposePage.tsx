@@ -179,7 +179,9 @@ export function ComposePage() {
   const signatoryNames = signatories?.map((s) => s.name) ?? [];
   const canSaveSignatory = cheque.signatoryName.trim() !== '' && !signatoryNames.includes(cheque.signatoryName.trim());
   const needsText = cheque.crossing.kind === 'special' || cheque.crossing.kind === 'free';
-  const canReview = cheque.amount !== null && cheque.payee.trim() !== '' && Boolean(cheque.bookId);
+  const today = todayIso();
+  const datePassed = !locked && cheque.date < today;
+  const canReview = cheque.amount !== null && cheque.payee.trim() !== '' && Boolean(cheque.bookId) && !datePassed;
 
   shortcuts.current = {
     review: canReview && !locked ? () => void review() : undefined,
@@ -225,7 +227,7 @@ export function ComposePage() {
           })}
         </Select>
         <div className="grid grid-cols-2 gap-3">
-          <DatePicker label="التاريخ" value={cheque.date} onChange={(date) => update({ date })} hint="تاريخ صرف الشيك. لو بعد النهارده يبقى مؤجل." />
+          <DatePicker label="التاريخ" value={cheque.date} onChange={(date) => update({ date })} minDate={locked ? undefined : today} hint="النهارده أو أي يوم جاي. لو بعد النهارده يبقى مؤجل." />
           <DigitInput
             label="رقم الشيك"
             hint="المطبوع على الورقة جنب كلمة شيك."
@@ -236,6 +238,7 @@ export function ComposePage() {
             }}
           />
         </div>
+        {datePassed && <Notice tone="danger">تاريخ الشيك ده فات. اختار النهارده أو يوم جاي.</Notice>}
         <div>
           <Combobox label="اسم المفوض بالتوقيع" value={cheque.signatoryName} onChange={(signatoryName) => update({ signatoryName })} options={signatoryNames} hint="الشخص اللي هيوقّع الشيك. اسمه بيتطبع فوق مكان التوقيع، ولو فاضي مش هيتطبع." />
           {canSaveSignatory && (

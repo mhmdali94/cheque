@@ -10,15 +10,17 @@ interface DatePickerProps {
   value: string;
   onChange: (iso: string) => void;
   hint?: string;
+  /** أقدم تاريخ مسموح باختياره، بصيغة YYYY-MM-DD. */
+  minDate?: string;
 }
 
 /** منتقي تاريخ عربي: منتقي المتصفح بيظهر بلغة الجهاز. */
-export function DatePicker({ label, value, onChange, hint }: DatePickerProps) {
+export function DatePicker({ label, value, onChange, hint, minDate }: DatePickerProps) {
   const id = useId();
   const rootRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
-  const selected = parseIsoDate(value) ?? parseIsoDate(todayIso())!;
+  const selected = parseIsoDate(minDate && value < minDate ? minDate : value) ?? parseIsoDate(todayIso())!;
   const [view, setView] = useState({ year: selected.year, month: selected.month });
   const [focusDay, setFocusDay] = useState(selected.day);
 
@@ -50,7 +52,11 @@ export function DatePicker({ label, value, onChange, hint }: DatePickerProps) {
     setOpen(!open);
   };
 
+  const isBlocked = (iso: string) => Boolean(minDate && iso < minDate);
+  const previousBlocked = Boolean(minDate && toIsoDate(view.year, view.month, 1) <= minDate);
+
   const pick = (day: number) => {
+    if (isBlocked(toIsoDate(view.year, view.month, day))) return;
     onChange(toIsoDate(view.year, view.month, day));
     setOpen(false);
   };
@@ -59,6 +65,7 @@ export function DatePicker({ label, value, onChange, hint }: DatePickerProps) {
   const moveFocus = (delta: number) => {
     const next = focusDay + delta;
     if (next < 1) {
+      if (previousBlocked) return;
       shiftMonth(-1);
       const index = view.year * 12 + view.month - 2;
       setFocusDay(daysInMonth(Math.floor(index / 12), (index % 12) + 1) + next);
@@ -77,7 +84,7 @@ export function DatePicker({ label, value, onChange, hint }: DatePickerProps) {
       moveFocus(moves[event.key]);
     } else if (event.key === 'PageUp' || event.key === 'PageDown') {
       event.preventDefault();
-      shiftMonth(event.key === 'PageUp' ? -1 : 1);
+      if (event.key === 'PageDown' || !previousBlocked) shiftMonth(event.key === 'PageUp' ? -1 : 1);
     }
   };
 
@@ -109,7 +116,7 @@ export function DatePicker({ label, value, onChange, hint }: DatePickerProps) {
       {open && (
         <div role="dialog" aria-label={label} className="absolute top-[4.75rem] z-30 mt-1 w-[19.5rem] max-w-[calc(100vw-2rem)] rounded-md border border-rule-strong bg-surface p-3 shadow-lg">
           <div className="flex items-center justify-between">
-            <button type="button" aria-label="الشهر السابق" className={navClass} onClick={() => shiftMonth(-1)}>›</button>
+            <button type="button" aria-label="الشهر السابق" disabled={previousBlocked} className={`${navClass} disabled:opacity-30`} onClick={() => shiftMonth(-1)}>›</button>
             <p aria-live="polite" className="font-bold">{ARABIC_MONTHS[view.month - 1]} {toArabicDigits(view.year)}</p>
             <button type="button" aria-label="الشهر التالي" className={navClass} onClick={() => shiftMonth(1)}>‹</button>
           </div>
@@ -122,12 +129,14 @@ export function DatePicker({ label, value, onChange, hint }: DatePickerProps) {
             {Array.from({ length: total }, (_, i) => i + 1).map((day) => {
               const iso = toIsoDate(view.year, view.month, day);
               const isSelected = iso === value;
+              const blocked = isBlocked(iso);
               return (
                 <button
-                  key={day} type="button" tabIndex={day === focusDay ? 0 : -1} aria-pressed={isSelected}
+                  key={day} type="button" tabIndex={day === focusDay ? 0 : -1} aria-pressed={isSelected} aria-disabled={blocked || undefined}
                   aria-label={`${toArabicDigits(day)} ${ARABIC_MONTHS[view.month - 1]}`}
                   className={`aspect-square min-h-10 rounded-md text-sm tabular-nums transition-colors duration-100 ${
-                    isSelected ? 'bg-accent font-bold text-on-accent'
+                    blocked ? 'cursor-not-allowed text-ink-soft/40'
+                      : isSelected ? 'bg-accent font-bold text-on-accent'
                       : iso === today ? 'font-bold text-accent hover:bg-sunken' : 'hover:bg-sunken'
                   }`}
                   onClick={() => pick(day)}
