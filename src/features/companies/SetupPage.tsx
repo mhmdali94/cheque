@@ -3,6 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { toLatinDigits } from '@/core/digits';
 import { setSetting } from '@/db/repos';
 import { db } from '@/db/schema';
+import { AppBanner } from '@/ui/AppBanner';
 import { Button, DigitInput, Select, TextInput } from '@/ui/controls';
 import { addAccount, addBook, addCompany, COMPANY_COLORS, orderedTemplates, parseBookRange } from './data';
 import { ColorPicker } from './ColorPicker';
@@ -44,6 +45,8 @@ export function SetupPage() {
   };
 
   return (
+    <>
+    <div className="mx-auto max-w-5xl px-4 pt-6"><AppBanner /></div>
     <main className="mx-auto max-w-xl px-4 py-10">
       <h1 className="text-3xl font-bold">شيكاتي</h1>
       <p className="mt-2 text-ink-soft">نجهّز أول دفتر شيكات. كل البيانات بتتحفظ على جهازك بس.</p>
@@ -73,5 +76,6 @@ export function SetupPage() {
         <Button type="submit" variant="primary" className="mt-2">ابدأ</Button>
       </form>
     </main>
+    </>
   );
 }

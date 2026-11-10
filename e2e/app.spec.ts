@@ -248,3 +248,12 @@ test('صفحة الشركات: تعديل وإضافة، وبعد الإضافة
   await expect(page).toHaveURL(/\/accounts$/);
   await expect(page.getByRole('heading', { name: 'شركة النور الجديدة' })).toBeVisible();
 });
+
+test('أول فتح بيعرض البانر فوق نموذج البداية', async ({ page }) => {
+  await page.goto('/');
+  const banner = page.getByRole('img', { name: /شيكاتك مكتوبة صح/ });
+  await expect(banner).toBeVisible();
+  await expect.poll(() => banner.evaluate((image: HTMLImageElement) => image.naturalWidth)).toBeGreaterThan(0);
+  await expect(page.getByLabel('اسم الشركة')).toBeVisible();
+  if (SHOTS) await page.screenshot({ path: `${SHOTS}/setup.png` });
+});
