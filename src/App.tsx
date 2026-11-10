@@ -14,7 +14,6 @@ import { ComparePage } from '@/features/templates/ComparePage';
 import { PrinterPage } from '@/features/printer/PrinterPage';
 import { HistoryPage } from '@/features/history/HistoryPage';
 import { BackupPage } from '@/features/backup/BackupPage';
-import { BatchPage } from '@/features/batch/BatchPage';
 import { DashboardPage } from '@/features/dashboard/DashboardPage';
 import { SettingsPage } from '@/features/settings/SettingsPage';
 
@@ -40,7 +39,6 @@ export function App() {
         <Route path="printer" element={<PrinterPage />} />
         <Route path="history" element={<HistoryPage />} />
         <Route path="backup" element={<BackupPage />} />
-        <Route path="batch" element={<BatchPage />} />
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />

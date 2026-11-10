@@ -1,46 +1,7 @@
 import { expect, test } from '@playwright/test';
-import ExcelJS from 'exceljs';
 import { completeSetup, visibleLatinText, writeCheque } from './helpers';
 
 const SHOTS = process.env.SHOTS_DIR;
-
-async function batchFile(rows: unknown[][]): Promise<Buffer> {
-  const workbook = new ExcelJS.Workbook();
-  const sheet = workbook.addWorksheet('الشيكات');
-  sheet.addRow(['المستفيد', 'المبلغ', 'التاريخ', 'البيان']);
-  rows.forEach((row) => sheet.addRow(row));
-  return Buffer.from(await workbook.xlsx.writeBuffer());
-}
-
-test('طباعة دفعة: إيقاف بين كل شيك، والتالف يزحزح الأرقام', async ({ page }) => {
-  await completeSetup(page);
-  await page.getByRole('link', { name: 'دفعة من إكسل' }).click();
-  await expect(page.getByRole('heading', { name: 'طباعة دفعة من إكسل' })).toBeVisible();
-  expect(await visibleLatinText(page)).toEqual([]);
-
-  await page.getByLabel('ملف إكسل').setInputFiles({
-    name: 'b.xlsx', mimeType: 'application/octet-stream',
-    buffer: await batchFile([['شركة أ', 1000, '14/03/2026', ''], ['شركة ب', '٢٠٠٠', '', ''], ['', 5, '', '']]),
-  });
-  await expect(page.getByText(/المستفيد ناقص.*مش هيتطبع/)).toBeVisible();
-  await page.getByLabel(/أتحمل المسؤولية/).check();
-  await page.evaluate(() => { window.open = (() => window) as typeof window.open; });
-  await page.getByRole('button', { name: /ابدأ طباعة ٢ شيك/ }).click();
-
-  await expect(page.getByText('أدخل الشيك التالي رقم ١٠٠ ثم اضغط متابعة.')).toBeVisible();
-  await page.getByRole('button', { name: 'متابعة' }).click();
-  await page.getByRole('button', { name: 'تالف، هات الرقم التالي' }).click();
-
-  await expect(page.getByText('أدخل الشيك التالي رقم ١٠١ ثم اضغط متابعة.')).toBeVisible();
-  await expect(page.getByText('شركة أ')).toBeVisible();
-  await page.getByRole('button', { name: 'متابعة' }).click();
-  await page.getByRole('button', { name: 'تمام، طلع سليم' }).click();
-
-  await expect(page.getByText('أدخل الشيك التالي رقم ١٠٢ ثم اضغط متابعة.')).toBeVisible();
-  await page.getByRole('button', { name: 'متابعة' }).click();
-  await page.getByRole('button', { name: 'تمام، طلع سليم' }).click();
-  await expect(page.getByText('خلصت الدفعة.')).toBeVisible();
-});
 
 test('الوضع الداكن والإعدادات واللوحة', async ({ page }) => {
   await completeSetup(page);
@@ -158,7 +119,7 @@ const NAV_ORDER = ['الرئيسية', 'الحسابات البنكية', 'إض�
 test('القائمة ثابتة فوق وبالترتيب المطلوب', async ({ page }) => {
   await completeSetup(page);
   const nav = page.getByRole('navigation', { name: 'القائمة الرئيسية' });
-  await expect(nav.getByRole('link')).toHaveText([...NAV_ORDER, 'المسودات', 'السجل', 'دفعة من إكسل', 'قوالب الشيكات', 'الطابعة والمعايرة', 'النسخ الاحتياطي', 'الإعدادات']);
+  await expect(nav.getByRole('link')).toHaveText([...NAV_ORDER, 'المسودات', 'السجل', 'قوالب الشيكات', 'الطابعة والمعايرة', 'النسخ الاحتياطي', 'الإعدادات']);
   await page.goto('/printer');
   await expect(page.getByRole('heading', { name: 'طابعة تانية' })).toBeVisible();
   await page.evaluate(() => window.scrollTo(0, 1500));

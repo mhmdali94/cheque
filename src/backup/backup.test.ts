@@ -5,8 +5,7 @@ import type { Calibration, Cheque, Company } from '@/core/types';
 import { ShikatyDB } from '@/db/schema';
 import { ensureSeeded } from '@/db/seed';
 import { decryptText, encryptText, sha256Hex, WrongPasswordError } from './crypto';
-import { ARABIC_NUMBER_FORMAT, createBatchTemplate, createChequesWorkbook, parseBatchWorkbook } from './excel';
-import { parseAmount, toLatinDigits } from '@/core/digits';
+import { ARABIC_NUMBER_FORMAT, createChequesWorkbook } from './excel';
 import { applyMerge, BackupError, collectBackup, packBackup, planMerge, readBackupHeader, replaceAll, unpackBackup } from './format';
 import { decodeQrItem, encodeQrItem } from './qr';
 
@@ -153,41 +152,5 @@ describe('ملف Excel', () => {
     expect(sheet.getCell('F2').numFmt).toBe(ARABIC_NUMBER_FORMAT);
     expect(sheet.getCell('C2').value).toBe('١٠٠');
     expect(sheet.getCell('H2').value).toBe('مسودة');
-  });
-});
-
-describe('دفعة من Excel', () => {
-  const helpers = { toLatin: toLatinDigits, parseAmount };
-
-  const workbookBuffer = async (rows: unknown[][]) => {
-    const workbook = new ExcelJS.Workbook();
-    await workbook.xlsx.load(await createBatchTemplate());
-    const sheet = workbook.worksheets[0];
-    rows.forEach((row) => sheet.addRow(row));
-    return workbook.xlsx.writeBuffer() as Promise<ArrayBuffer>;
-  };
-
-  it('يقرأ الصفوف بأرقام عربية ولاتينية وتاريخ حقيقي', async () => {
-    const rows = await parseBatchWorkbook(await workbookBuffer([
-      ['شركة أ', 148500, new Date(Date.UTC(2026, 2, 14)), 'بيان'],
-      ['شركة ب', '١٢٠٠', '١٤/٠٣/٢٠٢٦', ''],
-      ['شركة ج', 50, '', ''],
-    ]), '2026-11-09', helpers);
-    expect(rows.map((r) => [r.payee, r.amount, r.date, r.errors.length])).toEqual([
-      ['شركة أ', 148500, '2026-03-14', 0],
-      ['شركة ب', 1200, '2026-03-14', 0],
-      ['شركة ج', 50, '2026-11-09', 0],
-    ]);
-  });
-
-  it('الصفوف الغلط تتعلّم وما تضيعش', async () => {
-    const rows = await parseBatchWorkbook(await workbookBuffer([['', 12.5, 'أمس', '']]), '2026-11-09', helpers);
-    expect(rows[0].errors).toEqual(['المستفيد ناقص', 'الشيكات بالجنيه الصحيح، من غير قروش', 'التاريخ مش مفهوم']);
-  });
-
-  it('ملف بعناوين مختلفة يترفض', async () => {
-    const workbook = new ExcelJS.Workbook();
-    workbook.addWorksheet('x').addRow(['a', 'b']);
-    await expect(parseBatchWorkbook(await workbook.xlsx.writeBuffer() as ArrayBuffer, '2026-11-09', helpers)).rejects.toThrow('عناوين');
   });
 });

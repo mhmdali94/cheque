@@ -22,7 +22,6 @@ const MAIN_ITEMS: NavItem[] = [
 const TOOL_ITEMS: NavItem[] = [
   { to: '/drafts', label: 'المسودات' },
   { to: '/history', label: 'السجل' },
-  { to: '/batch', label: 'دفعة من إكسل' },
   { to: '/templates', label: 'قوالب الشيكات' },
   { to: '/printer', label: 'الطابعة والمعايرة' },
   { to: '/backup', label: 'النسخ الاحتياطي' },
