@@ -43,6 +43,47 @@ function NewCompanyForm({ onDone }: { onDone: () => void }) {
   );
 }
 
+function CompanyHeading({ company, canEdit }: { company: Company; canEdit: boolean }) {
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState(company.name);
+  const [color, setColor] = useState(company.color);
+  const [error, setError] = useState('');
+
+  const open = () => {
+    setName(company.name);
+    setColor(company.color);
+    setError('');
+    setEditing(true);
+  };
+
+  const submit = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!name.trim()) { setError('اكتب اسم الشركة'); return; }
+    await db.companies.update(company.id, { name: name.trim(), color, updatedAt: Date.now() });
+    setEditing(false);
+  };
+
+  if (editing && canEdit) {
+    return (
+      <form onSubmit={(e) => void submit(e)} className="mb-6 flex max-w-lg flex-col gap-4 rounded-md border border-rule bg-surface p-4" noValidate>
+        <TextInput label="اسم الشركة" value={name} onChange={setName} error={error} autoFocus hint="الاسم الجديد بيظهر في كل الشاشات. الشيكات المطبوعة مش بتتأثر." />
+        <ColorPicker value={color} onChange={setColor} />
+        <div className="flex gap-2">
+          <Button type="submit" variant="primary">حفظ التعديل</Button>
+          <Button variant="ghost" onClick={() => setEditing(false)}>إلغاء</Button>
+        </div>
+      </form>
+    );
+  }
+
+  return (
+    <div className="mb-4 flex flex-wrap items-center gap-2">
+      <h2 className="text-lg font-bold">{company.name}</h2>
+      {canEdit && <Button variant="ghost" onClick={open}>تعديل اسم الشركة</Button>}
+    </div>
+  );
+}
+
 function BookRow({ book, remaining }: { book: ChequeBook; remaining: number }) {
   const total = book.toNumber - book.fromNumber + 1;
   const low = remaining <= LOW_BOOK_THRESHOLD;
@@ -174,7 +215,7 @@ export function AccountsPage() {
 
       {addingCompany && <NewCompanyForm onDone={() => setAddingCompany(false)} />}
 
-      {company && <h2 className="mb-4 text-lg font-bold">{company.name}</h2>}
+      {company && <CompanyHeading key={company.id} company={company} canEdit={!addingCompany} />}
 
       {accounts?.length === 0 && (
         <EmptyState title="لسه مفيش حسابات للشركة دي" action={<Link className="font-semibold text-accent underline" to="/accounts/new">أضف أول حساب</Link>}>

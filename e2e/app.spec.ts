@@ -213,3 +213,26 @@ test('مسح كل البيانات بيرجع الجهاز زي أول مرة ب
   await page.goto('/drafts');
   await expect(page.getByText('مفيش مسودات')).toBeVisible();
 });
+
+test('تعديل اسم الشركة وإضافة شركة جديدة', async ({ page }) => {
+  await completeSetup(page);
+  await page.getByRole('link', { name: 'الحسابات البنكية' }).click();
+  await page.getByRole('button', { name: 'تعديل اسم الشركة' }).click();
+  const name = page.getByLabel('اسم الشركة');
+  await expect(name).toHaveValue('شركة النور للتجارة');
+  await name.fill('');
+  await page.getByRole('button', { name: 'حفظ التعديل' }).click();
+  await expect(page.getByText('اكتب اسم الشركة')).toBeVisible();
+  await name.fill('شركة النور الجديدة');
+  await page.getByRole('button', { name: 'حفظ التعديل' }).click();
+  await expect(page.getByRole('heading', { name: 'شركة النور الجديدة' })).toBeVisible();
+  const selector = page.getByRole('combobox', { name: 'الشركة' });
+  await expect(selector.locator('option')).toHaveText(['شركة النور الجديدة']);
+
+  await page.getByRole('button', { name: 'شركة جديدة' }).click();
+  await page.getByLabel('اسم الشركة').fill('شركة ثانية');
+  await page.getByRole('button', { name: 'حفظ الشركة' }).click();
+  await expect(selector.locator('option')).toHaveCount(2);
+  await expect(page.getByRole('heading', { name: 'شركة ثانية' })).toBeVisible();
+  expect(await visibleLatinText(page)).toEqual([]);
+});
