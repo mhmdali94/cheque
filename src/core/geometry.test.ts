@@ -116,6 +116,9 @@ describe('الاتجاهات', () => {
   it('التاريخ جزء واحد', () => {
     expect(splitBidiRuns('١٤/٠٣/٢٠٢٦', 'rtl')).toEqual([{ text: '١٤/٠٣/٢٠٢٦', dir: 'ltr' }]);
   });
+  it('المبلغ بالفاصلة العربية جزء واحد', () => {
+    expect(splitBidiRuns('١٤٨٥٠٠،٤٥', 'ltr')).toEqual([{ text: '١٤٨٥٠٠،٤٥', dir: 'ltr' }]);
+  });
   it('علامة الحماية في اتجاه شمال ليمين', () => {
     expect(splitBidiRuns('١٤٨٥٠٠/-', 'ltr')).toEqual([{ text: '١٤٨٥٠٠/-', dir: 'ltr' }]);
   });

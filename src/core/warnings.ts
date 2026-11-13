@@ -21,6 +21,7 @@ export interface WarningInput {
   date: string;
   today: string;
   amount: number | null;
+  piasters?: number;
   amountLimit?: number;
   number: number | null;
   bookRange?: { from: number; to: number };
@@ -29,7 +30,7 @@ export interface WarningInput {
 
 export function chequeWarnings(input: WarningInput): Warning[] {
   const warnings: Warning[] = [];
-  const { model, date, today, amount, amountLimit, number, bookRange, isDuplicateNumber } = input;
+  const { model, date, today, amount, piasters = 0, amountLimit, number, bookRange, isDuplicateNumber } = input;
 
   for (const issue of model.issues) {
     const label = FIELD_LABEL[issue.field];
@@ -53,7 +54,7 @@ export function chequeWarnings(input: WarningInput): Warning[] {
     }
   }
 
-  if (amount !== null && amountLimit && amount > amountLimit) {
+  if (amount !== null && amountLimit && (amount > amountLimit || (amount === amountLimit && piasters > 0))) {
     warnings.push({ id: 'limit', blocking: false, message: `المبلغ أكبر من الحد المحدد (${formatNumber(amountLimit)})` });
   }
 

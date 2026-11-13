@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { formatDate, formatDateTime } from '@/core/date';
-import { formatNumber, toArabicDigits } from '@/core/digits';
+import { formatMoney, toArabicDigits } from '@/core/digits';
 import type { Cheque } from '@/core/types';
 import { logAudit } from '@/db/repos';
 import { db } from '@/db/schema';
@@ -53,7 +53,7 @@ export function DraftsPage() {
                 <span dir="ltr">{formatDate(draft.date)}</span> ، آخر تعديل {formatDateTime(draft.updatedAt)}
               </span>
             </Link>
-            <p className="font-bold tabular-nums">{draft.amount !== null ? `${formatNumber(draft.amount)} جنيه` : 'بدون مبلغ'}</p>
+            <p className="font-bold tabular-nums">{draft.amount !== null ? `${formatMoney(draft.amount, draft.piasters)} جنيه` : 'بدون مبلغ'}</p>
             <Button variant="ghost" onClick={() => void cancel(draft)}>إلغاء</Button>
           </li>
         ))}

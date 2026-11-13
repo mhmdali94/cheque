@@ -210,6 +210,18 @@ describe('تخطيط الشيك', () => {
     expect(line2.endsWith('لا غير')).toBe(true);
   });
 
+  it.each(templates.map((t) => [t.name, t] as const))('%s: المبلغ بالقروش في نفس الخانات من غير ما حاجة تتحرك', (_name, t) => {
+    const whole = texts(t, { amount: 3990213 });
+    const withPiasters = texts(t, { amount: 3990213, piasters: 45 });
+    const digits = withPiasters.texts.find((d) => d.field === 'amountDigits')!;
+    expect(digits.text).toBe('٣٩٩٠٢١٣،٤٥');
+    expect(digits.y).toBe(whole.texts.find((d) => d.field === 'amountDigits')!.y);
+    expect(digits.widthMm).toBeLessThanOrEqual(t.amountDigits.w);
+    const words = withPiasters.texts.filter((d) => d.field.startsWith('amountWords')).map((d) => d.text).join(' ');
+    expect(words).toBe('فقط ثلاثة ملايين وتسعمائة وتسعون ألف ومائتان وثلاثة عشر جنيه مصري وخمسة وأربعون قرش لا غير');
+    expect(withPiasters.issues.filter((i) => i.kind === 'overflow' || i.kind === 'missingGlyph')).toEqual([]);
+  });
+
   it('«لا غير» و«جنيه مصري» لا يتفصلوا', () => {
     expect(tokenizeWords('فقط مائة جنيه مصري لا غير')).toEqual(['فقط', 'مائة', 'جنيه مصري', 'لا غير']);
   });

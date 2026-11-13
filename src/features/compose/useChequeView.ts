@@ -23,7 +23,7 @@ export interface ChequeView {
 
 export function chequeValues(cheque: Cheque, company: Company): ChequeValues {
   return {
-    payee: cheque.payee, amount: cheque.amount, date: cheque.date, memo: cheque.memo,
+    payee: cheque.payee, amount: cheque.amount, piasters: cheque.piasters ?? 0, date: cheque.date, memo: cheque.memo,
     signatoryName: cheque.signatoryName, crossing: cheque.crossing, printStub: cheque.printStub,
     tafqeetPresetId: company.tafqeetPresetId, customPattern: company.customPattern,
     amountProtection: company.amountProtection,
@@ -53,7 +53,7 @@ export function useChequeView(cheque: Cheque | null): ChequeView {
   const warnings = useMemo(() => {
     if (!cheque || !model) return [];
     return chequeWarnings({
-      model, date: cheque.date, today: todayIso(), amount: cheque.amount, amountLimit: company?.amountLimit,
+      model, date: cheque.date, today: todayIso(), amount: cheque.amount, piasters: cheque.piasters ?? 0, amountLimit: company?.amountLimit,
       number: cheque.number, isDuplicateNumber,
       bookRange: book ? { from: book.fromNumber, to: book.toNumber } : undefined,
     });

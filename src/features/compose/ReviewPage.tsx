@@ -47,7 +47,7 @@ export function ReviewPage() {
   const canSpeak = 'speechSynthesis' in window;
 
   const words = amountInWords(chequeValues(cheque, view.company));
-  const digits = cheque.amount !== null ? formatProtectedAmount(cheque.amount, view.company.amountProtection, view.template.amountDigits.signSide) : '';
+  const digits = cheque.amount !== null ? formatProtectedAmount(cheque.amount, view.company.amountProtection, view.template.amountDigits.signSide, cheque.piasters ?? 0) : '';
 
   return (
     <div className="mx-auto max-w-4xl">

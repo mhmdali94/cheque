@@ -134,9 +134,37 @@ export function resolveTafqeetOptions(presetId: string, customPattern?: string):
  * العدد لا يسبق المعدود، فتُدمج الكلمتان في موضع {العملة}.
  * لو الصيغة المخصصة بدون {العملة} يُكتب العدد حرفياً لأن المحاسب كتب الوحدة بنفسه.
  */
-export function tafqeet(value: number, options: TafqeetOptions = resolveTafqeetOptions('accounting')): string {
+/** القروش بالحروف مع تمييزها، بنفس قواعد الجنيه (القرش مذكر). */
+function piastersToWords(piasters: number, style: TafqeetStyle): string {
+  if (piasters === 1) return 'قرش واحد';
+  if (piasters === 2) return 'قرشان';
+  let noun = 'قرش';
+  if (piasters >= 3 && piasters <= 10) noun = 'قروش';
+  else if (piasters >= 11 && style === 'fusha') noun = 'قرشاً';
+  return `${groupToWords(piasters)} ${noun}`;
+}
+
+/** مكان القروش في الصيغة: بعد العملة، أو قبل «لا غير»، أو في الآخر. */
+function withPiastersSlot(pattern: string): string {
+  if (pattern.includes('{القروش}')) return pattern;
+  if (pattern.includes('{العملة}')) return pattern.replace('{العملة}', '{العملة}{القروش}');
+  const index = pattern.lastIndexOf('لا غير');
+  return index >= 0 ? `${pattern.slice(0, index)}{القروش} ${pattern.slice(index)}` : `${pattern}{القروش}`;
+}
+
+export function tafqeet(value: number, options: TafqeetOptions = resolveTafqeetOptions('accounting'), piasters = 0): string {
+  if (!Number.isInteger(piasters) || piasters < 0 || piasters > 99) throw new RangeError('القروش لازم تكون من ٠ لـ ٩٩');
+  const { style, withAdjective } = options;
+  const pattern = withPiastersSlot(options.pattern);
+  const piastersText = piasters > 0 ? `${value > 0 ? ' و' : ''}${piastersToWords(piasters, style)}` : '';
+
+  if (value === 0 && piasters > 0) {
+    return pattern
+      .replaceAll('{المبلغ}', '').replaceAll('{العملة}', '').replaceAll('{القروش}', piastersText)
+      .replace(/\s+/g, ' ').trim();
+  }
+
   assertAmount(value);
-  const { pattern, style, withAdjective } = options;
   const hasCurrency = pattern.includes('{العملة}');
 
   let amount = numberToWords(value, style);
@@ -153,6 +181,7 @@ export function tafqeet(value: number, options: TafqeetOptions = resolveTafqeetO
   return pattern
     .replaceAll('{المبلغ}', amount)
     .replaceAll('{العملة}', currency)
+    .replaceAll('{القروش}', piastersText)
     .replace(/\s+/g, ' ')
     .trim();
 }

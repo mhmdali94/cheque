@@ -3,7 +3,7 @@ import type { Cheque, ChequeBook, ChequeStatus, Company, BankAccount } from '@/c
 import { toArabicDigits } from '@/core/digits';
 import { parseIsoDate } from '@/core/date';
 
-export const ARABIC_NUMBER_FORMAT = '[$-2000000]#,##0';
+export const ARABIC_NUMBER_FORMAT = '[$-2000000]#,##0.00';
 export const ARABIC_DATE_FORMAT = '[$-2000401]dd/mm/yyyy';
 
 export const STATUS_LABEL: Record<ChequeStatus, string> = {
@@ -45,7 +45,7 @@ export async function createChequesWorkbook(cheques: Cheque[], context: ChequeEx
       number: cheque.number === null ? '' : toArabicDigits(String(cheque.number).padStart(book?.numberWidth ?? 0, '0')),
       date: excelDate(cheque.date),
       payee: cheque.payee,
-      amount: cheque.amount,
+      amount: cheque.amount === null ? null : cheque.amount + (cheque.piasters ?? 0) / 100,
       memo: toArabicDigits(cheque.memo),
       status: STATUS_LABEL[cheque.status],
     });

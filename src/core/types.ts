@@ -145,6 +145,8 @@ export interface Cheque {
   payee: string;
   /** null لحد ما المحاسب يكتب مبلغ صحيح في المسودة. */
   amount: number | null;
+  /** القروش من ٠ لـ ٩٩. الشيكات القديمة مفيهاش الحقل ده، فيعتبر صفر. */
+  piasters?: number;
   /** النص كما كتبه المحاسب، عشان المسودة ترجع زي ما هي. */
   amountInput: string;
   date: string;

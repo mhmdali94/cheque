@@ -64,6 +64,7 @@ export interface PrintModel {
 export interface ChequeValues {
   payee: string;
   amount: number | null;
+  piasters?: number;
   date: string;
   memo: string;
   signatoryName: string;
@@ -264,9 +265,9 @@ function layoutCrossing(builder: Builder, template: ChequeTemplate, value: Cross
   }
 }
 
-export function amountInWords(values: Pick<ChequeValues, 'amount' | 'tafqeetPresetId' | 'customPattern'>): string {
+export function amountInWords(values: Pick<ChequeValues, 'amount' | 'piasters' | 'tafqeetPresetId' | 'customPattern'>): string {
   if (values.amount === null) return '';
-  return tafqeet(values.amount, resolveTafqeetOptions(values.tafqeetPresetId, values.customPattern));
+  return tafqeet(values.amount, resolveTafqeetOptions(values.tafqeetPresetId, values.customPattern), values.piasters ?? 0);
 }
 
 export function layoutCheque(template: ChequeTemplate, values: ChequeValues, measurer: Measurer): PrintModel {
@@ -277,7 +278,7 @@ export function layoutCheque(template: ChequeTemplate, values: ChequeValues, mea
 
   if (values.amount !== null) {
     layoutAmountWords(builder, template, amountInWords(values));
-    const digits = formatProtectedAmount(values.amount, values.amountProtection, template.amountDigits.signSide);
+    const digits = formatProtectedAmount(values.amount, values.amountProtection, template.amountDigits.signSide, values.piasters ?? 0);
     builder.simple(digits, template.amountDigits, 'amountDigits', 'ltr');
   }
 
@@ -291,7 +292,7 @@ export function layoutCheque(template: ChequeTemplate, values: ChequeValues, mea
     builder.simple(formatDate(values.date), enabled(stub.date), 'stubDate', 'ltr');
     builder.simple(toArabicDigits(values.payee), enabled(stub.payee), 'stubPayee');
     if (values.amount !== null) {
-      builder.simple(formatProtectedAmount(values.amount, values.amountProtection), enabled(stub.amount), 'stubAmount', 'ltr');
+      builder.simple(formatProtectedAmount(values.amount, values.amountProtection, 'right', values.piasters ?? 0), enabled(stub.amount), 'stubAmount', 'ltr');
     }
   }
 

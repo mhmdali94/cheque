@@ -19,8 +19,10 @@ test('كتابة شيك في متصفح لغته إنجليزية', async ({ pag
   expect(await visibleLatinText(page)).toEqual([]);
 
   // الكسور مرفوضة
-  await page.getByLabel('المبلغ بالجنيه').fill('12.5');
-  await expect(page.getByText('الشيكات بالجنيه الصحيح، من غير قروش')).toBeVisible();
+  await page.getByLabel('المبلغ بالجنيه').fill('١٤٨٥٠٠،٤٥');
+  await expect(page.getByText('فقط مائة وثمانية وأربعون ألف وخمسمائة جنيه مصري وخمسة وأربعون قرش لا غير')).toBeVisible();
+  await page.getByLabel('المبلغ بالجنيه').fill('12.345');
+  await expect(page.getByText('القروش رقمين بس بعد العلامة')).toBeVisible();
   await page.getByLabel('المبلغ بالجنيه').fill('148500');
 
   await page.getByRole('button', { name: 'راجع واطبع' }).click();

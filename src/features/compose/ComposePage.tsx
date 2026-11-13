@@ -204,11 +204,11 @@ export function ComposePage() {
         />
         <DigitInput
           label="المبلغ بالجنيه" value={cheque.amountInput}
-          hint="بالأرقام وبالجنيه الصحيح، من غير قروش. التفقيط بيتكتب لوحده."
+          hint="بالأرقام، والقروش بعد العلامة لو فيه. مثلاً: ٣٩٩٠٢١٣٫٤٥. التفقيط بيتكتب لوحده."
           error={parsedAmount && !parsedAmount.ok ? parsedAmount.error : undefined}
           onChange={(amountInput) => {
             const parsed = parseAmount(amountInput);
-            update({ amountInput, amount: parsed.ok ? parsed.value : null });
+            update({ amountInput, amount: parsed.ok ? parsed.value : null, piasters: parsed.ok ? parsed.piasters : 0 });
           }}
         />
         {words && <p aria-live="polite" className="-mt-2 rounded-md bg-accent-tint px-3 py-2 text-sm font-semibold text-accent-strong">{words}</p>}

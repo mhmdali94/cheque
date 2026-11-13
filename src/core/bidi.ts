@@ -12,7 +12,7 @@ type CharClass = 'R' | 'L' | 'N';
 const DIGIT = /[0-9٠-٩۰-۹]/;
 const STRONG_LTR = /[A-Za-z]/;
 const STRONG_RTL = /[֐-ࣿיִ-﷿ﹰ-﻿]/;
-const NUMBER_SEPARATOR = /[/.,:٫٬-]/;
+const NUMBER_SEPARATOR = /[/.,:٫٬،-]/;
 
 function classify(chars: string[]): CharClass[] {
   const classes = chars.map<CharClass>((c) => {

@@ -54,7 +54,7 @@ function CompanyPreferences({ company }: { company: Company }) {
       {company.tafqeetPresetId === CUSTOM_PRESET_ID && (
         <TextInput
           label="الصيغة المخصصة" value={company.customPattern ?? ''} onChange={(v) => void update({ customPattern: v })}
-          hint="استخدم {المبلغ} للعدد و{العملة} لكلمة الجنيه حسب العدد."
+          hint="استخدم {المبلغ} للعدد، و{العملة} لكلمة الجنيه حسب العدد، و{القروش} لمكان القروش لو فيه."
         />
       )}
       <Select label="حماية المبلغ بالأرقام" value={company.amountProtection} onChange={(v) => void update({ amountProtection: v as AmountProtection })}>

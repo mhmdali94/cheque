@@ -4,7 +4,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { createChequesWorkbook, STATUS_LABEL, XLSX_MIME } from '@/backup/excel';
 import type { QrItem } from '@/backup/qr';
 import { formatDate, formatDateTime, todayIso } from '@/core/date';
-import { formatNumber, toArabicDigits, toLatinDigits } from '@/core/digits';
+import { formatMoney, formatNumber, formatPiastersTotal, toArabicDigits, toLatinDigits, toPiasters } from '@/core/digits';
 import type { AuditAction, Cheque, ChequeStatus } from '@/core/types';
 import { getAccountantName, logAudit } from '@/db/repos';
 import { db } from '@/db/schema';
@@ -81,12 +81,12 @@ export function HistoryPage() {
       if (from && c.date < from) return false;
       if (to && c.date > to) return false;
       if (term) {
-        const haystack = `${toLatinDigits(c.payee)} ${c.number ?? ''} ${c.amount ?? ''}`;
+        const haystack = `${toLatinDigits(c.payee)} ${c.number ?? ''} ${c.amount ?? ''} ${c.amount ?? ''}.${String(c.piasters ?? 0).padStart(2, '0')}`;
         if (!haystack.includes(term)) return false;
       }
       return true;
     });
-    const value = (c: Cheque) => (sort === 'date' ? c.date : sort === 'amount' ? c.amount ?? 0 : sort === 'number' ? c.number ?? 0 : c.updatedAt);
+    const value = (c: Cheque) => (sort === 'date' ? c.date : sort === 'amount' ? toPiasters(c.amount, c.piasters) : sort === 'number' ? c.number ?? 0 : c.updatedAt);
     return filtered.sort((a, b) => (value(a) < value(b) ? 1 : value(a) > value(b) ? -1 : 0));
   }, [cheques, allCompanies, company?.id, status, bank, bookId, from, to, query, sort, accountById]);
 
@@ -96,7 +96,7 @@ export function HistoryPage() {
       if (c.status !== 'printed') continue;
       const entry = byCompany.get(c.companyId) ?? { count: 0, total: 0 };
       entry.count += 1;
-      entry.total += c.amount ?? 0;
+      entry.total += toPiasters(c.amount, c.piasters);
       byCompany.set(c.companyId, entry);
     }
     return [...byCompany];
@@ -185,7 +185,7 @@ export function HistoryPage() {
           {totals.map(([id, t]) => (
             <div key={id} className="flex gap-2">
               <dt className="text-ink-soft">{companyById.get(id)?.name}: مطبوع {formatNumber(t.count)}</dt>
-              <dd className="font-bold tabular-nums">{formatNumber(t.total)} جنيه</dd>
+              <dd className="font-bold tabular-nums">{formatPiastersTotal(t.total)} جنيه</dd>
             </div>
           ))}
         </dl>
@@ -208,7 +208,7 @@ export function HistoryPage() {
                   {allCompanies && `${companyById.get(c.companyId)?.name} ، `}رقم {numberText(c)} ، <span dir="ltr">{formatDate(c.date)}</span> ، {accountById.get(c.accountId)?.bankName}
                 </span>
               </Link>
-              <p className="font-bold tabular-nums">{c.amount !== null ? `${formatNumber(c.amount)} جنيه` : ''}</p>
+              <p className="font-bold tabular-nums">{c.amount !== null ? `${formatMoney(c.amount, c.piasters)} جنيه` : ''}</p>
               <p className={`text-sm font-semibold ${STATUS_CLASS[c.status]}`}>{STATUS_LABEL[c.status]}</p>
               <div className="flex flex-wrap">
                 <Button variant="ghost" onClick={() => void similar(c)}>شيك مشابه</Button>

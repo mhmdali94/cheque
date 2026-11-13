@@ -2,7 +2,7 @@ import { useMemo, type ReactNode } from 'react';
 import { Link } from 'react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { addMonths, dateCells, daysBetween, formatDate, formatDateLong, todayIso } from '@/core/date';
-import { formatNumber, MAX_AMOUNT } from '@/core/digits';
+import { formatMoney, formatNumber, formatPiastersTotal, MAX_AMOUNT, toPiasters } from '@/core/digits';
 import { resolveTafqeetOptions, tafqeet } from '@/core/tafqeet';
 import type { Cheque } from '@/core/types';
 import { remainingInBook } from '@/db/repos';
@@ -28,7 +28,7 @@ function Row({ cheque }: { cheque: Cheque }) {
     <li className="flex items-baseline justify-between gap-4 py-2">
       <Link to={`/cheque/${cheque.id}`} className="truncate font-semibold hover:text-accent">{cheque.payee || 'بدون مستفيد'}</Link>
       <span className="shrink-0 text-sm text-ink-soft"><span dir="ltr">{formatDate(cheque.date)}</span></span>
-      <span className="shrink-0 font-bold tabular-nums">{formatNumber(cheque.amount ?? 0)}</span>
+      <span className="shrink-0 font-bold tabular-nums">{formatMoney(cheque.amount ?? 0, cheque.piasters)}</span>
     </li>
   );
 }
@@ -90,13 +90,13 @@ export function DashboardPage() {
     const week = printed.filter((c) => c.printedAt !== undefined && Date.now() - c.printedAt < WEEK_MS);
 
     const totals = new Map<string, number>();
-    for (const c of printed) totals.set(c.payee, (totals.get(c.payee) ?? 0) + (c.amount ?? 0));
+    for (const c of printed) totals.set(c.payee, (totals.get(c.payee) ?? 0) + toPiasters(c.amount, c.piasters));
     const upcomingAll = printed.filter((c) => daysBetween(today, c.date) > 0 && c.date <= addMonths(today, 3));
 
     return {
       week: week.sort((a, b) => (b.printedAt ?? 0) - (a.printedAt ?? 0)).slice(0, LIST_SIZE),
       weekCount: week.length,
-      weekTotal: week.reduce((sum, c) => sum + (c.amount ?? 0), 0),
+      weekTotal: week.reduce((sum, c) => sum + toPiasters(c.amount, c.piasters), 0),
       topPayees: [...totals].sort((a, b) => b[1] - a[1]).slice(0, LIST_SIZE),
       upcoming: [...upcomingAll].sort((a, b) => a.date.localeCompare(b.date, 'ar-EG')).slice(0, LIST_SIZE),
       upcomingCount: upcomingAll.length,
@@ -108,8 +108,9 @@ export function DashboardPage() {
 
   if (!data || !company) return null;
 
-  const words = stats.weekTotal >= 1 && stats.weekTotal <= MAX_AMOUNT
-    ? tafqeet(stats.weekTotal, resolveTafqeetOptions(company.tafqeetPresetId, company.customPattern))
+  const [weekPounds, weekPiasters] = [Math.floor(stats.weekTotal / 100), stats.weekTotal % 100];
+  const words = stats.weekTotal > 0 && weekPounds <= MAX_AMOUNT
+    ? tafqeet(weekPounds, resolveTafqeetOptions(company.tafqeetPresetId, company.customPattern), weekPiasters)
     : 'لسه مفيش شيكات مطبوعة الأسبوع ده';
 
   const steps = [
@@ -160,7 +161,7 @@ export function DashboardPage() {
               <p className="mt-1 border-b border-dashed border-rule-strong pb-1 text-lg font-semibold">{words}</p>
             </div>
             <p className="shrink-0 rounded-md border border-rule-strong bg-surface px-4 py-2 text-2xl font-bold tabular-nums">
-              {formatNumber(stats.weekTotal)} <span className="text-sm font-semibold">جنيه</span>
+              {formatPiastersTotal(stats.weekTotal)} <span className="text-sm font-semibold">جنيه</span>
             </p>
           </div>
 
@@ -213,7 +214,7 @@ export function DashboardPage() {
               {stats.topPayees.map(([payee, total]) => (
                 <li key={payee} className="flex justify-between gap-4 py-2">
                   <span className="truncate font-semibold">{payee}</span>
-                  <span className="shrink-0 font-bold tabular-nums">{formatNumber(total)}</span>
+                  <span className="shrink-0 font-bold tabular-nums">{formatPiastersTotal(total)}</span>
                 </li>
               ))}
             </ul>
