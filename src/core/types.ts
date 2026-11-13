@@ -26,8 +26,11 @@ export interface DateField extends TextField {
   firstCellCenterX: number;
   /** المسافة بين مراكز الخانات المتجاورة. */
   cellPitch: number;
-  /** ltr: اليوم على الشمال. rtl: اليوم على اليمين. */
-  cellOrder: 'ltr' | 'rtl';
+  /**
+   * ymd: سنة شهر يوم من الشمال لليمين (الترتيب العربي، اليوم على اليمين).
+   * ltr: يوم شهر سنة من الشمال لليمين. rtl: عكس ltr رقم برقم.
+   */
+  cellOrder: 'ymd' | 'ltr' | 'rtl';
 }
 
 export interface AmountWordsField {

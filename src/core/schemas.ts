@@ -31,7 +31,7 @@ export const templateSchema = z.object({
     mode: z.enum(['cells', 'text']),
     firstCellCenterX: num,
     cellPitch: num.positive(),
-    cellOrder: z.enum(['ltr', 'rtl']),
+    cellOrder: z.enum(['ymd', 'ltr', 'rtl']),
   }),
   payee: textField,
   amountWords: z.object({ line1: textField, line2: textField, fillRemainder: z.boolean() }),

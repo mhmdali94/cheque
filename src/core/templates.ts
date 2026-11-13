@@ -150,7 +150,7 @@ function buildTemplate(
       ...dateBase, mode: 'cells',
       firstCellCenterX: dateBase.x + cellPitch / 2,
       cellPitch,
-      cellOrder: 'ltr',
+      cellOrder: 'ymd',
     },
     payee: textField(m, m.payee, 12, { bold: true }),
     amountWords: {

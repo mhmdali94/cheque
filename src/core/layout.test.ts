@@ -4,6 +4,7 @@ import { buildPageSetup } from './geometry';
 import { layoutCheque, tokenizeWords, type ChequeValues } from './layout';
 import { builtinTemplates } from './templates';
 import type { ChequeTemplate } from './types';
+import savedPositions from './fixtures/template-positions.json';
 import { chequeWarnings, marginWarnings } from './warnings';
 
 const shaper = createTestShaper();
@@ -166,8 +167,30 @@ describe('تخطيط الشيك', () => {
     expect(texts(ahly).texts.find((t) => t.field === 'amountDigits')?.text).toBe('١٤٨٥٠٠/-');
   });
 
-  it('خانات التاريخ: اليوم على الشمال', () => {
-    const digits = texts(ahly).texts.filter((t) => t.field === 'date');
+  it.each(templates.map((t) => [t.name, t] as const))('%s: التاريخ سنة شهر يوم من الشمال لليمين', (_name, t) => {
+    const digits = texts(t).texts.filter((d) => d.field === 'date').sort((a, b) => a.x - b.x);
+    // ١٤ مارس ٢٠٢٦
+    expect(digits.map((d) => d.text)).toEqual(['٢', '٠', '٢', '٦', '٠', '٣', '١', '٤']);
+  });
+
+  it('كل خانة رقم في مكان خانتها بالظبط', () => {
+    const digits = texts(ahly).texts.filter((d) => d.field === 'date').sort((a, b) => a.x - b.x);
+    digits.forEach((d, slot) => {
+      expect(d.x + d.widthMm / 2).toBeCloseTo(ahly.date.firstCellCenterX + slot * ahly.date.cellPitch, 6);
+    });
+  });
+
+  it('أماكن كل القوالب ما اتحركتش مع تغيير ترتيب التاريخ', () => {
+    for (const t of templates) {
+      const date: Partial<typeof t.date> = { ...t.date };
+      delete date.cellOrder;
+      expect(JSON.parse(JSON.stringify({ ...t, date }))).toEqual(savedPositions[t.id as keyof typeof savedPositions]);
+    }
+  });
+
+  it('ترتيب يوم شهر سنة لسه متاح لو حد اختاره', () => {
+    const dayFirst = { ...ahly, date: { ...ahly.date, cellOrder: 'ltr' as const } };
+    const digits = texts(dayFirst).texts.filter((t) => t.field === 'date');
     expect(digits.map((d) => d.text)).toEqual(['١', '٤', '٠', '٣', '٢', '٠', '٢', '٦']);
     expect(digits[0].x).toBeLessThan(digits[7].x);
   });

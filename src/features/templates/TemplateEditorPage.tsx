@@ -347,8 +347,10 @@ function TemplateEditor({ id }: { id: string }) {
               <Select label="شكل التاريخ" value={template.date.mode} onChange={(v) => change((t) => ({ ...t, date: { ...t.date, mode: v as 'cells' | 'text' } }))}>
                 <option value="cells">٨ خانات منفصلة</option><option value="text">سطر واحد</option>
               </Select>
-              <Select label="ترتيب الخانات" value={template.date.cellOrder} onChange={(v) => change((t) => ({ ...t, date: { ...t.date, cellOrder: v as 'ltr' | 'rtl' } }))}>
-                <option value="ltr">اليوم على الشمال</option><option value="rtl">اليوم على اليمين</option>
+              <Select label="ترتيب الخانات" value={template.date.cellOrder} onChange={(v) => change((t) => ({ ...t, date: { ...t.date, cellOrder: v as 'ymd' | 'ltr' | 'rtl' } }))}>
+                <option value="ymd">سنة شهر يوم (اليوم على اليمين)</option>
+                <option value="ltr">يوم شهر سنة (اليوم على الشمال)</option>
+                <option value="rtl">معكوس رقم برقم</option>
               </Select>
               <NumberControl label="مركز أول خانة من الشمال" value={template.date.firstCellCenterX} onCommit={(v) => change((t) => ({ ...t, date: { ...t.date, firstCellCenterX: v } }))} />
               <NumberControl label="المسافة بين الخانات" value={template.date.cellPitch} onCommit={(v) => v > 0 && change((t) => ({ ...t, date: { ...t.date, cellPitch: v } }))} />

@@ -229,9 +229,13 @@ function layoutDate(builder: Builder, template: ChequeTemplate, iso: string): vo
     builder.simple(formatDate(iso), field, 'date', 'ltr');
     return;
   }
-  const cells = dateCells(iso);
+  const dayMonthYear = dateCells(iso);
+  // في الترتيب العربي المجموعات بتتعكس، لكن أرقام كل عدد بتفضل مقروءة (١٣ مش ٣١).
+  const cells = field.cellOrder === 'ymd'
+    ? [...dayMonthYear.slice(4), ...dayMonthYear.slice(2, 4), ...dayMonthYear.slice(0, 2)]
+    : dayMonthYear;
   cells.forEach((digit, index) => {
-    const slot = field.cellOrder === 'ltr' ? index : cells.length - 1 - index;
+    const slot = field.cellOrder === 'rtl' ? cells.length - 1 - index : index;
     const center = field.firstCellCenterX + slot * field.cellPitch;
     const widthMm = builder.width(digit, 'ltr', field.fontSizePt, field.bold);
     builder.model.texts.push({
