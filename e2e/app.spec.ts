@@ -267,3 +267,21 @@ test('من غير دفتر، كتابة شيك بتوجّه لتسجيل الد�
   await expect(page.getByText('مفيش دفتر شيكات للشركة دي')).toBeVisible();
   await expect(page.getByRole('link', { name: 'سجّل دفتر' })).toBeVisible();
 });
+
+test('الصفحة جاهزة لمحركات البحث والمشاركة', async ({ page, request }) => {
+  await page.goto('/');
+  await expect(page).toHaveTitle(/شيكاتي/);
+  const meta = (selector: string) => page.locator(selector).getAttribute('content');
+  expect(await meta('meta[name="description"]')).toContain('التفقيط'.slice(0, 0) + 'بتفقيط عربي');
+  expect(await page.locator('link[rel="canonical"]').getAttribute('href')).toBe('https://cheque.prismatechwork.com/');
+  expect(await meta('meta[property="og:image"]')).toBe('https://cheque.prismatechwork.com/og-image.jpg');
+  const schema = JSON.parse((await page.locator('script[type="application/ld+json"]').textContent()) ?? '{}');
+  expect(schema['@type']).toBe('WebApplication');
+
+  const robots = await request.get('/robots.txt');
+  expect(await robots.text()).toContain('Sitemap: https://cheque.prismatechwork.com/sitemap.xml');
+  const sitemap = await request.get('/sitemap.xml');
+  expect(await sitemap.text()).toContain('<loc>https://cheque.prismatechwork.com/</loc>');
+  const image = await request.get('/og-image.jpg');
+  expect(image.headers()['content-type']).toContain('image/jpeg');
+});
