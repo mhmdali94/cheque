@@ -19,7 +19,12 @@ export interface ChequeView {
   model: PrintModel | null;
   warnings: Warning[];
   numberLabel?: string;
+  /** الشيك اتطبع بأماكن قالب اتعدّل بعدها. */
+  templateChanged: boolean;
 }
+
+const samePositions = (a: ChequeTemplate, b: ChequeTemplate) =>
+  JSON.stringify({ ...a, updatedAt: 0 }) === JSON.stringify({ ...b, updatedAt: 0 });
 
 export function chequeValues(cheque: Cheque, company: Company): ChequeValues {
   return {
@@ -31,13 +36,16 @@ export function chequeValues(cheque: Cheque, company: Company): ChequeValues {
 }
 
 /** كل ما يُشتق من الشيك: القالب، نموذج الطباعة، والتحذيرات. */
-export function useChequeView(cheque: Cheque | null): ChequeView {
+export function useChequeView(cheque: Cheque | null, options: { preferLiveTemplate?: boolean } = {}): ChequeView {
   const { shaper, error: shaperError } = useShaper();
   const company = useLiveQuery(() => (cheque ? db.companies.get(cheque.companyId) : undefined), [cheque?.companyId]);
   const book = useLiveQuery(() => (cheque?.bookId ? db.books.get(cheque.bookId) : undefined), [cheque?.bookId]);
   const account = useLiveQuery(() => (cheque?.accountId ? db.accounts.get(cheque.accountId) : undefined), [cheque?.accountId]);
   const liveTemplate = useLiveQuery(() => (cheque?.templateId ? db.templates.get(cheque.templateId) : undefined), [cheque?.templateId]);
-  const template = cheque?.templateSnapshot ?? liveTemplate;
+  const snapshot = cheque?.templateSnapshot;
+  const templateChanged = Boolean(snapshot && liveTemplate && !samePositions(snapshot, liveTemplate));
+  // الشيك القديم بيرجع بأماكنه وقت الطباعة، إلا لو المحاسب اختار القالب الحالي لإعادة الطباعة.
+  const template = options.preferLiveTemplate && liveTemplate ? liveTemplate : snapshot ?? liveTemplate;
 
   const isDuplicateNumber = useLiveQuery(async () => {
     if (!cheque?.bookId || cheque.number === null) return false;
@@ -61,5 +69,5 @@ export function useChequeView(cheque: Cheque | null): ChequeView {
 
   const numberLabel = cheque?.number != null && book ? formatChequeNumber(cheque.number, book.numberWidth) : undefined;
 
-  return { company, book, account, template, shaper, shaperError, model, warnings, numberLabel };
+  return { company, book, account, template, shaper, shaperError, model, warnings, numberLabel, templateChanged };
 }

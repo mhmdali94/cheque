@@ -203,3 +203,32 @@ test('صفحة الطابعة عربية ما عدا أسماء القوائم،
   await page.getByRole('button', { name: 'مقلوب' }).click();
   await expect(page.getByText('عدّلنا الاتجاه.', { exact: false })).toBeVisible();
 });
+
+test('إعادة طباعة شيك مطبوع بأماكن القالب بعد تعديله', async ({ page }) => {
+  await completeSetup(page);
+  await writeCheque(page);
+  await page.getByRole('button', { name: 'راجع واطبع' }).click();
+  await tickChecklist(page);
+  await page.evaluate(() => { window.open = (() => window) as typeof window.open; });
+  await page.getByRole('button', { name: 'اطبع على الشيك' }).click();
+  await page.getByRole('button', { name: 'تمام، طلع سليم' }).click();
+  await expect(page.getByText('اتحفظ الشيك كمطبوع.')).toBeVisible();
+  const reviewUrl = page.url();
+
+  const inkTops = () => page.evaluate(() => [...document.querySelectorAll('svg[role="img"] path.ink-in')]
+    .map((p) => Math.round((p as SVGGraphicsElement).getBBox().y * 10) / 10).sort((a, b) => a - b).join(','));
+  await page.reload();
+  await expect(page.getByText(/القالب اتعدّل بعد/)).toHaveCount(0);
+  const printedLayout = await inkTops();
+
+  await page.goto('/templates/tpl-ahly-qr');
+  await page.getByRole('textbox', { name: 'من فوق', exact: true }).fill('١٠');
+  await page.waitForTimeout(600);
+
+  await page.goto(reviewUrl);
+  const option = page.getByLabel(/القالب اتعدّل بعد ما الشيك ده اتطبع/);
+  await expect(option).toBeChecked();
+  await expect.poll(inkTops).not.toBe(printedLayout);
+  await option.uncheck();
+  await expect.poll(inkTops).toBe(printedLayout);
+});

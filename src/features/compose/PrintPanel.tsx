@@ -103,7 +103,7 @@ export function PrintPanel({ cheque, view }: { cheque: Cheque; view: ChequeView 
 
   const printedOk = async () => {
     if (isReprint) {
-      await db.cheques.update(cheque.id, { printCount: cheque.printCount + 1, updatedAt: Date.now() });
+      await db.cheques.update(cheque.id, { printCount: cheque.printCount + 1, templateSnapshot: template, updatedAt: Date.now() });
     } else {
       await db.cheques.update(cheque.id, {
         status: 'printed', printedAt: Date.now(), printCount: 1, templateSnapshot: template, updatedAt: Date.now(),

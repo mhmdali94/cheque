@@ -40,11 +40,11 @@ describe('القوالب الجاهزة', () => {
   });
 
   it.each(templates.filter((t) => t.bankName === ahly.bankName).map((t) => [t.name, t] as const))('%s: مربع التاريخ بالمقاس الفعلي', (_name, t) => {
-    expect(t.lengthMm - (t.date.x + t.date.w)).toBeCloseTo(12, 2);
+    expect(t.lengthMm - (t.date.x + t.date.w)).toBeCloseTo(13, 2);
     expect(t.date.w).toBe(32.5);
     expect(t.date.h).toBe(6);
     expect(t.date.cellPitch).toBeCloseTo(32.5 / 8, 6);
-    expect(t.date.y + t.date.h * 0.74).toBeCloseTo(8.55, 1);
+    expect(t.date.y + t.date.h * 0.74).toBeCloseTo(9.55, 1);
   });
 
   it('خانات تاريخ الأهلي متوسطة في المربع', () => {
@@ -67,7 +67,7 @@ describe('القوالب الجاهزة', () => {
     expect(x + w).toBeLessThan(t.amountDigits.x);
     expect(t.amountDigits.y).toBeCloseTo(84 * 0.45 - 5.5 + 2.8, 1);
     expect(t.amountDigits.fontSizePt).toBe(14);
-    expect(t.signatoryName.y).toBeCloseTo(84 * 0.63 - 5.5, 1);
+    expect(t.signatoryName.y).toBeCloseTo(84 * 0.63 - 5.5 - 2, 1);
     expect(t.amountWords.line1.y).toBeCloseTo(84 * 0.4 - 5.5 + 3, 1);
     expect(t.amountWords.line2.y).toBeCloseTo(84 * 0.51 - 5.5 + 3, 1);
     // المربعان متلامسان، والمهم إن سطور الكتابة نفسها متباعدة بما يكفي الحروف
@@ -96,7 +96,7 @@ describe('القوالب الجاهزة', () => {
       expect(fromRight(t.date)).toBeCloseTo(10, 1);
       expect(t.date.w).toBe(32.5);
       expect(t.date.h).toBe(6);
-      expect(t.date.y).toBeCloseTo(ahly.date.y + 1, 1);
+      expect(t.date.y + t.date.h * 0.74).toBeCloseTo(9.55, 1);
     });
 
     it('المبلغ بالأرقام بالمقاس المعدل وبنفس الخط', () => {
@@ -110,7 +110,6 @@ describe('القوالب الجاهزة', () => {
       ['المستفيد', (x: ChequeTemplate) => x.payee, 0, -1],
       ['سطر التفقيط الأول', (x: ChequeTemplate) => x.amountWords.line1, 10, -3],
       ['سطر التفقيط التاني', (x: ChequeTemplate) => x.amountWords.line2, 10, -5],
-      ['اسم المفوض', (x: ChequeTemplate) => x.signatoryName, 0, -2],
     ] as const)('%s بالإزاحة المطلوبة', (_label, field, left, down) => {
       const [mine, theirs] = [field(t), field(ahly)];
       expect(fromRight(mine)).toBeCloseTo(ahlyFromRight(theirs) + left, 1);
@@ -123,6 +122,11 @@ describe('القوالب الجاهزة', () => {
         expect(f.x).toBeGreaterThanOrEqual(5);
         expect(f.x + f.w).toBeLessThanOrEqual(t.lengthMm);
       }
+    });
+
+    it('اسم المفوض في مكانه على الإسكندرية', () => {
+      expect(fromRight(t.signatoryName)).toBeCloseTo(17.4, 1);
+      expect(t.signatoryName.y).toBeCloseTo(45.42, 1);
     });
 
     it('خط الترميز والتسطير والتوقيع بتوع شيك الإسكندرية', () => {
@@ -149,10 +153,10 @@ describe('القوالب الجاهزة', () => {
   });
 
   it('قيم الأهلي النهائية ما اتغيرتش', () => {
-    expect(ahly.lengthMm - (ahly.date.x + ahly.date.w)).toBeCloseTo(12, 2);
-    expect(ahly.date.y + ahly.date.h * 0.74).toBeCloseTo(8.55, 1);
+    expect(ahly.lengthMm - (ahly.date.x + ahly.date.w)).toBeCloseTo(13, 2);
+    expect(ahly.date.y + ahly.date.h * 0.74).toBeCloseTo(9.55, 1);
     expect(ahly.amountDigits.y).toBeCloseTo(35.1, 1);
-    expect(ahly.signatoryName.y).toBeCloseTo(47.42, 1);
+    expect(ahly.signatoryName.y).toBeCloseTo(45.42, 1);
   });
 
   it('الخانات الثماني داخل مربع التاريخ', () => {

@@ -88,6 +88,17 @@ const ALEX: ChequeMeasurements = {
   micrTop: 77,
 };
 
+/** تعديلات الأهلي اللي جت بعد ما الإسكندرية اتنسخ منه، فمش بتغيّر الإسكندرية. */
+const AHLY_FINAL: ChequeMeasurements = {
+  ...AHLY,
+  dateBoxMm: {
+    ...AHLY.dateBoxMm!,
+    fromRight: AHLY.dateBoxMm!.fromRight + 1,
+    baselineY: AHLY.dateBoxMm!.baselineY + 1,
+  },
+  name: { ...AHLY.name, top: AHLY.name.top - (2 / 84) * 100 },
+};
+
 const round = (value: number) => Math.round(value * 100) / 100;
 
 function textField(m: ChequeMeasurements, range: Range, sizePt: number, extra: Partial<TextField> = {}): TextField {
@@ -192,11 +203,11 @@ export const BANK_ALEX_PERSONAL = 'بنك الإسكندرية (شخصي)';
 /** أماكن الحقول في النماذج غير المقاسة منسوخة من النموذج المقاس لنفس البنك. */
 export function builtinTemplates(): ChequeTemplate[] {
   return [
-    buildTemplate('tpl-ahly-qr', BANK_AHLY, 'الحالي (برمز مربع)', AHLY, 'approximate'),
-    buildTemplate('tpl-ahly-old', BANK_AHLY, 'قديم', AHLY, 'unmeasured'),
-    buildTemplate('tpl-ahly-regular', BANK_AHLY, 'عادي', AHLY, 'unmeasured'),
-    buildTemplate('tpl-ahly-3', BANK_AHLY, 'نموذج ٣', AHLY, 'unmeasured'),
-    buildTemplate('tpl-ahly-platinum', BANK_AHLY, 'بلاتيني', AHLY, 'unmeasured'),
+    buildTemplate('tpl-ahly-qr', BANK_AHLY, 'الحالي (برمز مربع)', AHLY_FINAL, 'approximate'),
+    buildTemplate('tpl-ahly-old', BANK_AHLY, 'قديم', AHLY_FINAL, 'unmeasured'),
+    buildTemplate('tpl-ahly-regular', BANK_AHLY, 'عادي', AHLY_FINAL, 'unmeasured'),
+    buildTemplate('tpl-ahly-3', BANK_AHLY, 'نموذج ٣', AHLY_FINAL, 'unmeasured'),
+    buildTemplate('tpl-ahly-platinum', BANK_AHLY, 'بلاتيني', AHLY_FINAL, 'unmeasured'),
     buildTemplate('tpl-alex-1', BANK_ALEX, 'نموذج ١ (خاص)', ALEX, 'approximate'),
     // نسخة مطابقة تماماً لقالب الإسكندرية.
     buildTemplate('tpl-alex-personal', BANK_ALEX_PERSONAL, 'نموذج ١', ALEX, 'approximate'),

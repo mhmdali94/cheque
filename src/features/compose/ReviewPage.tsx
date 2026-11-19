@@ -23,7 +23,8 @@ export function ReviewPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const cheque = useLiveQuery(() => db.cheques.get(id ?? ''), [id]);
-  const view = useChequeView(cheque ?? null);
+  const [useCurrentTemplate, setUseCurrentTemplate] = useState(true);
+  const view = useChequeView(cheque ?? null, { preferLiveTemplate: useCurrentTemplate });
   const [lensOn, setLensOn] = useState(false);
 
   useEffect(() => {
@@ -86,6 +87,13 @@ export function ReviewPage() {
         <ul className="mt-4 flex flex-col gap-2">
           {view.warnings.map((w) => <li key={w.id}><Notice tone={w.blocking ? 'danger' : 'warn'}>{w.message}</Notice></li>)}
         </ul>
+      )}
+
+      {cheque.status === 'printed' && view.templateChanged && (
+        <label className="mt-4 flex min-h-11 items-center gap-2 rounded-md bg-warn-tint px-3 text-sm font-semibold text-warn">
+          <input type="checkbox" className="size-5 shrink-0 accent-[var(--accent)]" checked={useCurrentTemplate} onChange={(e) => setUseCurrentTemplate(e.target.checked)} />
+          القالب اتعدّل بعد ما الشيك ده اتطبع. أعد الطباعة بأماكن القالب الحالية
+        </label>
       )}
 
       <PrintPanel cheque={cheque} view={view} />
