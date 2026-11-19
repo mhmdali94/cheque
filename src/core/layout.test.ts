@@ -44,7 +44,7 @@ describe('القوالب الجاهزة', () => {
     expect(t.date.w).toBe(32.5);
     expect(t.date.h).toBe(6);
     expect(t.date.cellPitch).toBeCloseTo(32.5 / 8, 6);
-    expect(t.date.y + t.date.h * 0.74).toBeCloseTo(10.05, 1);
+    expect(t.date.y + t.date.h * 0.74).toBeCloseTo(10.55, 1);
   });
 
   it('خانات تاريخ الأهلي متوسطة في المربع', () => {
@@ -154,7 +154,7 @@ describe('القوالب الجاهزة', () => {
 
   it('قيم الأهلي النهائية ما اتغيرتش', () => {
     expect(ahly.lengthMm - (ahly.date.x + ahly.date.w)).toBeCloseTo(14, 2);
-    expect(ahly.date.y + ahly.date.h * 0.74).toBeCloseTo(10.05, 1);
+    expect(ahly.date.y + ahly.date.h * 0.74).toBeCloseTo(10.55, 1);
     expect(ahly.amountDigits.y).toBeCloseTo(35.1, 1);
     expect(ahly.signatoryName.y).toBeCloseTo(45.42, 1);
   });
