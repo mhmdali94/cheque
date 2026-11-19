@@ -94,13 +94,10 @@ export function formatProtectedAmount(
 ): string {
   switch (protection) {
     case 'slash': {
-      // من غير علامة «/» لأنها ممكن تتعدل لرقم: ١٤٨٥٠٠,- من غير قروش، و١٤٨٥٠٠,٤٥ بالقروش.
+      // من غير علامة «/» لأنها ممكن تتعدل لرقم، والقروش دايماً رقمين: ١٤٨٥٠٠,٠٠ و١٤٨٥٠٠,٤٥.
       const digits = toArabicDigits(value);
-      if (piasters > 0) {
-        const tail = toArabicDigits(String(piasters).padStart(2, '0'));
-        return signSide === 'right' ? `${digits},${tail}` : `${tail},${digits}`;
-      }
-      return signSide === 'right' ? `${digits},-` : `-,${digits}`;
+      const tail = toArabicDigits(String(piasters).padStart(2, '0'));
+      return signSide === 'right' ? `${digits},${tail}` : `${tail},${digits}`;
     }
     case 'hash':
       return `#${formatMoney(value, piasters)}#`;

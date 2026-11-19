@@ -171,7 +171,7 @@ describe('القوالب الجاهزة', () => {
 
 describe('تخطيط الشيك', () => {
   it('المبلغ بالأرقام بالشكل المطلوب', () => {
-    expect(texts(ahly).texts.find((t) => t.field === 'amountDigits')?.text).toBe('١٤٨٥٠٠,-');
+    expect(texts(ahly).texts.find((t) => t.field === 'amountDigits')?.text).toBe('١٤٨٥٠٠,٠٠');
   });
 
   it.each(templates.map((t) => [t.name, t] as const))('%s: التاريخ سنة شهر يوم من الشمال لليمين', (_name, t) => {

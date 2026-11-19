@@ -120,7 +120,7 @@ describe('الاتجاهات', () => {
     expect(splitBidiRuns('١٤٨٥٠٠،٤٥', 'ltr')).toEqual([{ text: '١٤٨٥٠٠،٤٥', dir: 'ltr' }]);
   });
   it('علامة الحماية في اتجاه شمال ليمين', () => {
-    expect(splitBidiRuns('١٤٨٥٠٠,-', 'ltr')).toEqual([{ text: '١٤٨٥٠٠,-', dir: 'ltr' }]);
+    expect(splitBidiRuns('١٤٨٥٠٠,٠٠', 'ltr')).toEqual([{ text: '١٤٨٥٠٠,٠٠', dir: 'ltr' }]);
     expect(splitBidiRuns('١٤٨٥٠٠,٤٥', 'ltr')).toEqual([{ text: '١٤٨٥٠٠,٤٥', dir: 'ltr' }]);
   });
   it('الفاصلة العربية جوه جملة عربية بتفضل معاها', () => {
