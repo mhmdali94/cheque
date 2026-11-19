@@ -40,11 +40,11 @@ describe('القوالب الجاهزة', () => {
   });
 
   it.each(templates.filter((t) => t.bankName === ahly.bankName).map((t) => [t.name, t] as const))('%s: مربع التاريخ بالمقاس الفعلي', (_name, t) => {
-    expect(t.lengthMm - (t.date.x + t.date.w)).toBeCloseTo(13, 2);
+    expect(t.lengthMm - (t.date.x + t.date.w)).toBeCloseTo(14, 2);
     expect(t.date.w).toBe(32.5);
     expect(t.date.h).toBe(6);
     expect(t.date.cellPitch).toBeCloseTo(32.5 / 8, 6);
-    expect(t.date.y + t.date.h * 0.74).toBeCloseTo(9.55, 1);
+    expect(t.date.y + t.date.h * 0.74).toBeCloseTo(10.05, 1);
   });
 
   it('خانات تاريخ الأهلي متوسطة في المربع', () => {
@@ -153,8 +153,8 @@ describe('القوالب الجاهزة', () => {
   });
 
   it('قيم الأهلي النهائية ما اتغيرتش', () => {
-    expect(ahly.lengthMm - (ahly.date.x + ahly.date.w)).toBeCloseTo(13, 2);
-    expect(ahly.date.y + ahly.date.h * 0.74).toBeCloseTo(9.55, 1);
+    expect(ahly.lengthMm - (ahly.date.x + ahly.date.w)).toBeCloseTo(14, 2);
+    expect(ahly.date.y + ahly.date.h * 0.74).toBeCloseTo(10.05, 1);
     expect(ahly.amountDigits.y).toBeCloseTo(35.1, 1);
     expect(ahly.signatoryName.y).toBeCloseTo(45.42, 1);
   });

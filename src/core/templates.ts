@@ -93,8 +93,8 @@ const AHLY_FINAL: ChequeMeasurements = {
   ...AHLY,
   dateBoxMm: {
     ...AHLY.dateBoxMm!,
-    fromRight: AHLY.dateBoxMm!.fromRight + 1,
-    baselineY: AHLY.dateBoxMm!.baselineY + 1,
+    fromRight: AHLY.dateBoxMm!.fromRight + 2,
+    baselineY: AHLY.dateBoxMm!.baselineY + 1.5,
   },
   name: { ...AHLY.name, top: AHLY.name.top - (2 / 84) * 100 },
 };
