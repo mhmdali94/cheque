@@ -37,8 +37,15 @@ export type AmountParseResult =
  * الجنيهات والقروش بيتخزنوا كأعداد صحيحة منفصلة عشان مفيش أخطاء كسور.
  */
 export function parseAmount(input: string): AmountParseResult {
-  // الفاصلة العربية «،» والعلامة «٫» والنقطة بيفصلوا القروش، و«,» و«٬» فواصل آلاف.
-  const compact = toLatinDigits(input).replace(/[\s,٬]/g, '');
+  // «،» و«٫» والنقطة بيفصلوا القروش، و«٬» فاصل آلاف.
+  // «,» فاصل آلاف لو بعدها ٣ أرقام (١٤٨,٥٠٠)، وفاصل قروش لو بعدها رقم أو رقمين في الآخر (١٤٨٥٠٠,٤٥)،
+  // لأن ده نفس شكل المبلغ المطبوع على الشيك.
+  let compact = toLatinDigits(input).replace(/[\s٬]/g, '');
+  const piastersComma = /,(\d{1,2})$/.exec(compact);
+  if (piastersComma && !/[.٫،]/.test(compact)) {
+    compact = `${compact.slice(0, piastersComma.index)}.${piastersComma[1]}`;
+  }
+  compact = compact.replace(/,/g, '');
   if (compact === '') return { ok: false, error: 'اكتب المبلغ' };
 
   const match = /^(\d+)(?:[.٫،](\d*))?$/.exec(compact);
@@ -87,13 +94,13 @@ export function formatProtectedAmount(
 ): string {
   switch (protection) {
     case 'slash': {
-      // من غير علامة «/» لأنها ممكن تتعدل لرقم: ١٤٨٥٠٠،- من غير قروش، و١٤٨٥٠٠،٤٥ بالقروش.
+      // من غير علامة «/» لأنها ممكن تتعدل لرقم: ١٤٨٥٠٠,- من غير قروش، و١٤٨٥٠٠,٤٥ بالقروش.
       const digits = toArabicDigits(value);
       if (piasters > 0) {
         const tail = toArabicDigits(String(piasters).padStart(2, '0'));
-        return signSide === 'right' ? `${digits}،${tail}` : `${tail}،${digits}`;
+        return signSide === 'right' ? `${digits},${tail}` : `${tail},${digits}`;
       }
-      return signSide === 'right' ? `${digits}،-` : `-،${digits}`;
+      return signSide === 'right' ? `${digits},-` : `-,${digits}`;
     }
     case 'hash':
       return `#${formatMoney(value, piasters)}#`;

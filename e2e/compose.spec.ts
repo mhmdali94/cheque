@@ -27,7 +27,7 @@ test('كتابة شيك في متصفح لغته إنجليزية', async ({ pag
 
   await page.getByRole('button', { name: 'راجع واطبع' }).click();
   await expect(page.getByRole('img', { name: 'الشيك مكبّر للمراجعة' })).toBeVisible();
-  await expect(page.getByText('١٤٨٥٠٠،-')).toBeVisible();
+  await expect(page.getByText('١٤٨٥٠٠,-')).toBeVisible();
   await expect(page.getByText('الشيك ده من دفتر شركة: شركة النور للتجارة')).toBeVisible();
   if (SHOTS) await page.screenshot({ path: `${SHOTS}/review-desktop.png`, fullPage: true });
   expect(await visibleLatinText(page)).toEqual([]);

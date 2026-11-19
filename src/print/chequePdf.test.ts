@@ -46,7 +46,7 @@ describe('ملف الطباعة', () => {
 
   it('الأرقام المرسومة عربية مش لاتينية', () => {
     const digits = model.texts.find((t) => t.field === 'amountDigits')!;
-    expect(digits.text).toMatch(/^[٠-٩]+،-$/);
+    expect(digits.text).toMatch(/^[٠-٩]+,-$/);
     const latin = shaper.outline({ ...digits, text: '148500,-' }).commands;
     expect(shaper.outline(digits).commands).not.toEqual(latin);
   });

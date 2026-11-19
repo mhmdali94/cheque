@@ -35,7 +35,7 @@ describe('تشكيل النص', () => {
     expect(moves[moves.length - 1].pts[0]).toBeGreaterThanOrEqual(one * 0.9);
   });
 
-  it.each(['١٤٨٥٠٠،-', '١٤٨٥٠٠،٤٥', '#١٤٨٬٥٠٠#', '**١٤٨٬٥٠٠**', 'شركة ABC'])('كل حروف «%s» موجودة في الخطوط', (text) => {
+  it.each(['١٤٨٥٠٠,-', '١٤٨٥٠٠,٤٥', '#١٤٨٬٥٠٠#', '**١٤٨٬٥٠٠**', 'شركة ABC'])('كل حروف «%s» موجودة في الخطوط', (text) => {
     expect(shaper.hasMissingGlyphs({ ...request, text, dir: 'ltr' })).toBe(false);
     expect(shaper.hasMissingGlyphs({ ...request, text, bold: true })).toBe(false);
   });
