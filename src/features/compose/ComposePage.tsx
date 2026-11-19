@@ -9,7 +9,7 @@ import type { Cheque, CrossingKind } from '@/core/types';
 import { logAudit, newId, nextChequeNumber } from '@/db/repos';
 import { db } from '@/db/schema';
 import { ChequePreview } from '@/features/preview/ChequePreview';
-import { formatChequeNumber } from '@/features/companies/data';
+import { formatChequeNumber, orderedTemplates } from '@/features/companies/data';
 import { useCurrentCompany } from '@/state/useAppData';
 import { Combobox } from '@/ui/Combobox';
 import { Button, DigitInput, EmptyState, Notice, Select, TextInput } from '@/ui/controls';
@@ -38,6 +38,7 @@ export function ComposePage() {
   const updateLoggedRef = useRef(false);
   const saveTimer = useRef<number | undefined>(undefined);
 
+  const allTemplates = useLiveQuery(() => orderedTemplates(), []);
   const books = useLiveQuery(() => (company ? db.books.where('companyId').equals(company.id).toArray() : []), [company?.id]);
   const accounts = useLiveQuery(() => (company ? db.accounts.where('companyId').equals(company.id).toArray() : []), [company?.id]);
   const payees = useLiveQuery(() => (company ? db.payees.where('companyId').equals(company.id).toArray() : []), [company?.id]);
@@ -188,6 +189,9 @@ export function ComposePage() {
     similar: persistedRef.current ? () => void flush().then(() => createSimilarCheque(cheque)).then((copy) => navigate(`/cheque/${copy.id}`)) : undefined,
   };
 
+  // قوالب نفس البنك بس، لأن أماكن كل بنك مختلفة. والقالب الحالي يفضل ظاهر حتى لو من بنك تاني.
+  const chequeTemplates = (allTemplates ?? []).filter((t) => t.bankName === view.account?.bankName || t.id === cheque.templateId);
+
   const sectionTitle = 'mb-3 flex items-center gap-2 font-bold';
   const sectionNumber = 'flex size-7 items-center justify-center rounded-full bg-accent-tint text-sm font-bold text-accent-strong';
 
@@ -225,6 +229,12 @@ export function ComposePage() {
               </option>
             );
           })}
+        </Select>
+        <Select
+          label="قالب الطباعة" value={cheque.templateId} onChange={(templateId) => update({ templateId })}
+          hint="أماكن الكلام على الشيك. القوالب اللي حفظتها للبنك ده بتظهر هنا."
+        >
+          {chequeTemplates.map((t) => <option key={t.id} value={t.id}>{t.modelName}</option>)}
         </Select>
         <div className="grid grid-cols-2 gap-3">
           <DatePicker label="التاريخ" value={cheque.date} onChange={(date) => update({ date })} minDate={locked ? undefined : today} hint="النهارده أو أي يوم جاي. لو بعد النهارده يبقى مؤجل." />

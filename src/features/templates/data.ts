@@ -5,10 +5,11 @@ import { builtinTemplates } from '@/core/templates';
 import type { ChequeTemplate } from '@/core/types';
 import { base64ToBlob, blobToBase64, downloadBlob } from '@/ui/download';
 
-export async function duplicateTemplate(template: ChequeTemplate): Promise<ChequeTemplate> {
+export async function duplicateTemplate(template: ChequeTemplate, modelName?: string): Promise<ChequeTemplate> {
   const now = Date.now();
+  const model = modelName?.trim() || `${template.modelName} (نسخة)`;
   const copy: ChequeTemplate = {
-    ...structuredClone(template), id: newId(), name: `${template.name} (نسخة)`, modelName: `${template.modelName} (نسخة)`,
+    ...structuredClone(template), id: newId(), name: `${template.bankName}: ${model}`, modelName: model,
     builtin: false, createdAt: now, updatedAt: now,
   };
   await db.templates.add(copy);

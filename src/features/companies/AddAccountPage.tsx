@@ -11,8 +11,7 @@ import { addAccount, addBook, orderedTemplates, parseBookRange } from './data';
 export function AddAccountPage() {
   const { company } = useCurrentCompany();
   const navigate = useNavigate();
-  // النسخ اليدوية مش بتستقبل تحديثات الأماكن، فمش بنعرضها هنا.
-  const templates = useLiveQuery(async () => (await orderedTemplates()).filter((t) => !t.modelName.includes('(نسخة)')), []);
+  const templates = useLiveQuery(() => orderedTemplates(), []);
 
   const [bankName, setBankName] = useState('');
   const [templateId, setTemplateId] = useState('');

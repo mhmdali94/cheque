@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { completeSetup, visibleLatinText } from './helpers';
+import { completeSetup, visibleLatinText, writeCheque } from './helpers';
 
 const SHOTS = process.env.SHOTS_DIR;
 
@@ -76,7 +76,7 @@ test('المحرر: التنقل بين البنوك وزر الحفظ', async (
   await page.goto('/templates/tpl-ahly-qr');
   const bank = page.getByLabel('البنك', { exact: true });
   await expect(bank.locator('option')).toHaveText(['البنك الأهلي المصري', 'بنك الإسكندرية', 'بنك الإسكندرية (شخصي)']);
-  await expect(page.getByRole('button', { name: 'محفوظ' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'محفوظ' })).toBeVisible();
 
   await bank.selectOption('بنك الإسكندرية');
   await expect(page).toHaveURL(/\/templates\/tpl-alex-1$/);
@@ -88,7 +88,7 @@ test('المحرر: التنقل بين البنوك وزر الحفظ', async (
   await page.getByRole('button', { name: 'المستفيد، حرّكه بالأسهم' }).focus();
   await page.keyboard.press('ArrowDown');
   await page.getByRole('button', { name: 'حفظ التعديلات' }).click();
-  await expect(page.getByRole('button', { name: 'محفوظ' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'محفوظ' })).toBeVisible();
 
   await bank.selectOption('البنك الأهلي المصري');
   await expect(page).toHaveURL(/\/templates\/tpl-ahly-qr$/);
@@ -100,5 +100,53 @@ test('المحرر يحذّر لما القالب منسوخ', async ({ page }) 
   await completeSetup(page);
   await page.goto('/templates');
   await page.getByRole('button', { name: 'نسخة' }).first().click();
-  await expect(page.getByText(/ده قالب منسوخ/)).toBeVisible();
+  await expect(page.getByText(/ده قالب محفوظ باسمك/)).toBeVisible();
+});
+
+test('حفظ قالب جديد واختياره للشيك وللحساب', async ({ page }) => {
+  await completeSetup(page);
+  await writeCheque(page, 'تجربة القالب', '500');
+  await expect(page).toHaveURL(/\/cheque\/[0-9a-f-]{36}$/);
+  const chequeUrl = page.url();
+  await page.waitForTimeout(500);
+  const inkTops = () => page.evaluate(() => [...document.querySelectorAll('svg[role="img"] path.ink-in')]
+    .map((p) => Math.round((p as SVGGraphicsElement).getBBox().y * 10) / 10).sort((a, b) => a - b).join(','));
+  const original = await inkTops();
+
+  await page.goto('/templates/tpl-ahly-qr');
+  const top = page.getByRole('textbox', { name: 'من فوق', exact: true });
+  const originalTop = await top.inputValue();
+  await top.fill('١٠');
+  await page.getByRole('button', { name: 'حفظ كقالب جديد' }).click();
+  await page.getByLabel('اسم القالب الجديد').fill('أهلي المكتب');
+  await page.getByRole('button', { name: 'حفظ', exact: true }).click();
+  await expect(page).toHaveURL(/\/templates\/[0-9a-f-]{36}$/);
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('أهلي المكتب');
+  await expect(top).toHaveValue('١٠');
+
+  // القالب الجاهز رجع لأماكنه
+  await page.goto('/templates/tpl-ahly-qr');
+  await expect(top).toHaveValue(originalTop);
+
+  // الشيك المكتوب يقدر يختار القالب الجديد
+  await page.goto(chequeUrl);
+  await page.getByLabel('قالب الطباعة', { exact: true }).selectOption({ label: 'أهلي المكتب' });
+  await expect.poll(inkTops).not.toBe(original);
+  await page.waitForTimeout(500);
+  await page.reload();
+  await expect(page.getByLabel('قالب الطباعة', { exact: true }).locator('option:checked')).toHaveText('أهلي المكتب');
+
+  // الحساب يقدر يخليه الافتراضي للشيكات الجديدة
+  await page.goto('/accounts');
+  await page.getByLabel('قالب الطباعة للشيكات الجديدة').selectOption({ label: 'أهلي المكتب' });
+  await page.goto('/cheque');
+  await page.getByRole('link', { name: 'المسودات' }).click();
+  await page.goto('/cheque');
+  await page.getByRole('combobox', { name: 'المستفيد' }).fill('شيك جديد');
+  await expect(page.getByLabel('قالب الطباعة', { exact: true }).locator('option:checked')).toHaveText('أهلي المكتب');
+
+  // زر الحفظ دايماً بيأكد
+  await page.goto('/templates/tpl-ahly-qr');
+  await page.getByRole('button', { name: 'محفوظ' }).click();
+  await expect(page.getByText('اتحفظت التعديلات.', { exact: false })).toBeVisible();
 });

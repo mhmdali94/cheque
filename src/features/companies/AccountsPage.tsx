@@ -2,12 +2,12 @@ import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { formatNumber, toArabicDigits, toLatinDigits } from '@/core/digits';
-import type { BankAccount, ChequeBook } from '@/core/types';
+import type { BankAccount, ChequeBook, ChequeTemplate } from '@/core/types';
 import { remainingInBook } from '@/db/repos';
 import { db } from '@/db/schema';
 import { useCurrentCompany } from '@/state/useAppData';
-import { Button, DigitInput, EmptyState, PageHeader } from '@/ui/controls';
-import { addBook, formatChequeNumber, parseBookRange } from './data';
+import { Button, DigitInput, EmptyState, PageHeader, Select } from '@/ui/controls';
+import { addBook, formatChequeNumber, orderedTemplates, parseBookRange } from './data';
 
 const LOW_BOOK_THRESHOLD = 5;
 
@@ -59,8 +59,9 @@ function AddBookForm({ account, onDone }: { account: BankAccount; onDone: () => 
   );
 }
 
-function AccountCard({ account, books }: { account: BankAccount; books: { book: ChequeBook; remaining: number }[] }) {
+function AccountCard({ account, books, templates }: { account: BankAccount; books: { book: ChequeBook; remaining: number }[]; templates: ChequeTemplate[] }) {
   const [adding, setAdding] = useState(false);
+  const choices = templates.filter((t) => t.bankName === account.bankName || t.id === account.templateId);
   return (
     <article className="flex flex-col rounded-lg border border-rule bg-surface">
       <header className="rounded-t-lg bg-sunken px-4 py-3">
@@ -70,6 +71,14 @@ function AccountCard({ account, books }: { account: BankAccount; books: { book: 
         </p>
       </header>
       <div className="flex grow flex-col px-4 pb-4">
+        <div className="pt-3">
+          <Select
+            label="قالب الطباعة للشيكات الجديدة" value={account.templateId}
+            onChange={(templateId) => void db.accounts.update(account.id, { templateId, updatedAt: Date.now() })}
+          >
+            {choices.map((t) => <option key={t.id} value={t.id}>{t.modelName}</option>)}
+          </Select>
+        </div>
         {books.length > 0 ? (
           <ul className="divide-y divide-rule">{books.map(({ book, remaining }) => <BookRow key={book.id} book={book} remaining={remaining} />)}</ul>
         ) : (
@@ -93,6 +102,7 @@ function AccountCard({ account, books }: { account: BankAccount; books: { book: 
 export function AccountsPage() {
   const { company } = useCurrentCompany();
 
+  const templates = useLiveQuery(() => orderedTemplates(), []);
   const accounts = useLiveQuery(() => (company ? db.accounts.where('companyId').equals(company.id).toArray() : []), [company?.id]);
   const books = useLiveQuery(async () => {
     if (!company) return [];
@@ -121,7 +131,7 @@ export function AccountsPage() {
 
       <div className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(min(100%,21rem),1fr))]">
         {accounts?.map((account) => (
-          <AccountCard key={account.id} account={account} books={books?.filter((b) => b.book.accountId === account.id) ?? []} />
+          <AccountCard key={account.id} account={account} templates={templates ?? []} books={books?.filter((b) => b.book.accountId === account.id) ?? []} />
         ))}
       </div>
     </>

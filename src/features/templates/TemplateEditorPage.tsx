@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent, type PointerEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { toArabicDigits, toLatinDigits } from '@/core/digits';
@@ -10,9 +10,9 @@ import { useStoredImageUrl } from '@/features/preview/ChequePreview';
 import { commandsToSvgPath, transformCommands } from '@/print/shaper';
 import { compose, rotationAround, translation } from '@/core/geometry';
 import { useShaper } from '@/state/useAppData';
-import { Button, DigitInput, Notice, PageHeader, Select } from '@/ui/controls';
+import { Button, DigitInput, Notice, PageHeader, Select, TextInput } from '@/ui/controls';
 import { orderedTemplates } from '@/features/companies/data';
-import { exportTemplate, resetBuiltin } from './data';
+import { duplicateTemplate, exportTemplate, resetBuiltin } from './data';
 import { PhotoCapture } from './PhotoCapture';
 
 const SNAP_MM = 0.5;
@@ -100,6 +100,9 @@ function TemplateEditor({ id }: { id: string }) {
   const stored = useLiveQuery(() => db.templates.get(id), [id]);
   const allTemplates = useLiveQuery(() => orderedTemplates(), []);
   const [dirty, setDirty] = useState(false);
+  const [savedNote, setSavedNote] = useState(false);
+  const [saveAsOpen, setSaveAsOpen] = useState(false);
+  const [saveAsName, setSaveAsName] = useState('');
   const [template, setTemplate] = useState<ChequeTemplate | null>(null);
   const [selected, setSelected] = useState<FieldId>('payee');
   const [showGrid, setShowGrid] = useState(true);
@@ -127,6 +130,7 @@ function TemplateEditor({ id }: { id: string }) {
 
   const change = useCallback((updater: (t: ChequeTemplate) => ChequeTemplate) => {
     setDirty(true);
+    setSavedNote(false);
     setTemplate((current) => {
       if (!current) return current;
       const next = { ...updater(current), accuracy: 'adjusted' as const, updatedAt: Date.now() };
@@ -148,6 +152,19 @@ function TemplateEditor({ id }: { id: string }) {
     // القالب الأصلي المقاس أولاً، مش النسخ.
     const target = list.find((t) => t.builtin && t.accuracy !== 'unmeasured') ?? list.find((t) => t.builtin) ?? list[0];
     if (target) navigate(`/templates/${target.id}`);
+  };
+
+  /** التعديلات بتتحفظ في قالب جديد، والقالب الجاهز يرجع لأماكنه الأصلية. */
+  const saveAsNew = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!saveAsName.trim()) return;
+    window.clearTimeout(saveTimer.current);
+    pendingRef.current = null;
+    setDirty(false);
+    const copy = await duplicateTemplate(template, saveAsName);
+    if (template.builtin) await resetBuiltin(template);
+    setSaveAsOpen(false);
+    navigate(`/templates/${copy.id}`);
   };
 
   const L = template.lengthMm;
@@ -209,7 +226,8 @@ function TemplateEditor({ id }: { id: string }) {
   return (
     <>
       <PageHeader title={template.name}>
-        <Button variant="primary" disabled={!dirty} onClick={flush}>{dirty ? 'حفظ التعديلات' : 'محفوظ'}</Button>
+        <Button variant="primary" onClick={() => { flush(); setSavedNote(true); }}>{dirty ? 'حفظ التعديلات' : 'محفوظ'}</Button>
+        <Button onClick={() => { setSaveAsOpen(true); setSaveAsName(''); }}>حفظ كقالب جديد</Button>
         <Link className="flex min-h-11 items-center font-semibold text-accent underline" to={`/templates/${template.id}/measure`}>قياس الشيك</Link>
         <Button onClick={() => void exportTemplate(template)}>تصدير القالب</Button>
         {template.builtin && (
@@ -226,8 +244,20 @@ function TemplateEditor({ id }: { id: string }) {
         </Select>
       </div>
 
+      {savedNote && !dirty && <div className="mb-4"><Notice tone="info">اتحفظت التعديلات. أي شيك على القالب ده هيطبع بالأماكن الجديدة.</Notice></div>}
+
+      {saveAsOpen && (
+        <form onSubmit={(e) => void saveAsNew(e)} className="mb-6 flex max-w-xl flex-col gap-3 rounded-md border border-rule bg-surface p-4" noValidate>
+          <TextInput label="اسم القالب الجديد" value={saveAsName} onChange={setSaveAsName} autoFocus hint="مثلاً: الأهلي مضبوط على طابعة المكتب. هتختاره بعد كده وانت بتكتب الشيك." />
+          <div className="flex gap-2">
+            <Button type="submit" variant="primary" disabled={!saveAsName.trim()}>حفظ</Button>
+            <Button variant="ghost" onClick={() => setSaveAsOpen(false)}>إلغاء</Button>
+          </div>
+        </form>
+      )}
+
       {!template.builtin && (
-        <div className="mb-4"><Notice tone="warn">ده قالب منسوخ، فمش بيستقبل تحديثات الأماكن. الحساب لازم يكون مربوط بالقالب الأصلي عشان يطبع صح.</Notice></div>
+        <div className="mb-4"><Notice tone="info">ده قالب محفوظ باسمك. تعديلات التطبيق على أماكن البنك مش بتوصله، وأي تعديل بتعمله هنا بيوصل للشيكات اللي عليه.</Notice></div>
       )}
 
       {template.accuracy !== 'adjusted' && <div className="mb-4"><Notice tone="warn">{ACCURACY_LABEL[template.accuracy]}</Notice></div>}
