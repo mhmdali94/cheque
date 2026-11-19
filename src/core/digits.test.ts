@@ -51,7 +51,7 @@ describe('قراءة المبلغ', () => {
 
 describe('التنسيق', () => {
   it('فواصل عربية', () => expect(formatNumber(148500)).toBe('١٤٨٬٥٠٠'));
-  it('حماية بالشرطة كالشيك الحقيقي', () => expect(formatProtectedAmount(148500)).toBe('١٤٨٥٠٠/-'));
+  it('حماية بالشرطة كالشيك الحقيقي', () => expect(formatProtectedAmount(148500)).toBe('١٤٨٥٠٠،-'));
   it('بالقروش بالفاصلة العربية', () => expect(formatProtectedAmount(148500, 'slash', 'right', 45)).toBe('١٤٨٥٠٠،٤٥'));
   it('قرش واحد برقمين', () => expect(formatProtectedAmount(10, 'slash', 'right', 5)).toBe('١٠،٠٥'));
   it('بالقروش بين علامات', () => expect(formatProtectedAmount(3990213, 'hash', 'right', 45)).toBe('#٣٬٩٩٠٬٢١٣٫٤٥#'));
@@ -60,7 +60,11 @@ describe('التنسيق', () => {
     expect(formatMoney(148500)).toBe('١٤٨٬٥٠٠');
     expect(formatPiastersTotal(toPiasters(1, 75) + toPiasters(2, 50))).toBe('٤٫٢٥');
   });
-  it('عكس جهة العلامة', () => expect(formatProtectedAmount(148500, 'slash', 'left')).toBe('-/١٤٨٥٠٠'));
+  it('عكس جهة العلامة', () => expect(formatProtectedAmount(148500, 'slash', 'left')).toBe('-،١٤٨٥٠٠'));
+  it('مفيش علامة «/» في المبلغ بالأرقام', () => {
+    expect(formatProtectedAmount(148500)).not.toContain('/');
+    expect(formatProtectedAmount(148500, 'slash', 'right', 45)).not.toContain('/');
+  });
   it('حماية بالعلامات', () => {
     expect(formatProtectedAmount(148500, 'hash')).toBe('#١٤٨٬٥٠٠#');
     expect(formatProtectedAmount(148500, 'star')).toBe('**١٤٨٬٥٠٠**');

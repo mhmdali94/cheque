@@ -17,6 +17,8 @@ const NUMBER_SEPARATOR = /[/.,:٫٬،-]/;
 function classify(chars: string[]): CharClass[] {
   const classes = chars.map<CharClass>((c) => {
     if (DIGIT.test(c) || STRONG_LTR.test(c)) return 'L';
+    // الفاصلة العربية علامة فاصلة مش حرف، فبتاخد اتجاه اللي حواليها.
+    if (c === '،') return 'N';
     return STRONG_RTL.test(c) ? 'R' : 'N';
   });
   // الفاصل بين رقمين جزء من العدد، فلا ينعكس ترتيب ١٢/٠٥.

@@ -136,20 +136,23 @@ describe('القوالب الجاهزة', () => {
     });
   });
 
-  it('شيك الإسكندرية الشخصي نسخة مطابقة تماماً', () => {
+  it('شيك الإسكندرية الشخصي: نفس الإسكندرية ما عدا التاريخ', () => {
     const personal = templates.find((t) => t.id === 'tpl-alex-personal')!;
     expect(personal.bankName).toBe('بنك الإسكندرية (شخصي)');
-    expect(personal.modelName).toBe('نموذج ١');
-    const positions = ({ id: _id, name: _name, bankName: _bank, modelName: _model, ...rest }: ChequeTemplate) => rest;
+    const positions = ({ id: _id, name: _name, bankName: _bank, modelName: _model, date: _date, ...rest }: ChequeTemplate) => rest;
     expect(positions(personal)).toEqual(positions(alex));
+    // ٢ مم لتحت و١ مم لليسار
+    expect(personal.date.x).toBeCloseTo(alex.date.x - 1, 6);
+    expect(personal.date.y).toBeCloseTo(alex.date.y + 2, 6);
+    expect(personal.date.firstCellCenterX).toBeCloseTo(alex.date.firstCellCenterX - 1, 6);
+    expect(personal.date.w).toBe(alex.date.w);
   });
 
-  it('طباعة الشخصي بنفس أماكن الإسكندرية بالظبط', () => {
+  it('طباعة الشخصي بنفس أماكن الإسكندرية ما عدا التاريخ', () => {
     const personal = templates.find((t) => t.id === 'tpl-alex-personal')!;
-    const { rules: a, texts: b } = texts(personal, { signatoryName: 'أحمد', crossing: { kind: 'firstBeneficiary', text: '', drawLines: false } });
-    const { rules: c, texts: d } = texts(alex, { signatoryName: 'أحمد', crossing: { kind: 'firstBeneficiary', text: '', drawLines: false } });
-    expect(b).toEqual(d);
-    expect(a).toEqual(c);
+    const extra = { signatoryName: 'أحمد', crossing: { kind: 'firstBeneficiary' as const, text: '', drawLines: false } };
+    const notDate = (items: ReturnType<typeof texts>['texts']) => items.filter((t) => t.field !== 'date');
+    expect(notDate(texts(personal, extra).texts)).toEqual(notDate(texts(alex, extra).texts));
   });
 
   it('قيم الأهلي النهائية ما اتغيرتش', () => {
@@ -168,7 +171,7 @@ describe('القوالب الجاهزة', () => {
 
 describe('تخطيط الشيك', () => {
   it('المبلغ بالأرقام بالشكل المطلوب', () => {
-    expect(texts(ahly).texts.find((t) => t.field === 'amountDigits')?.text).toBe('١٤٨٥٠٠/-');
+    expect(texts(ahly).texts.find((t) => t.field === 'amountDigits')?.text).toBe('١٤٨٥٠٠،-');
   });
 
   it.each(templates.map((t) => [t.name, t] as const))('%s: التاريخ سنة شهر يوم من الشمال لليمين', (_name, t) => {

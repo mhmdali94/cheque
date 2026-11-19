@@ -99,6 +99,16 @@ const AHLY_FINAL: ChequeMeasurements = {
   name: { ...AHLY.name, top: AHLY.name.top - (2 / 84) * 100 },
 };
 
+/** الشخصي نسخة من الإسكندرية، والتاريخ بس مقاس على ورقته. */
+const ALEX_PERSONAL: ChequeMeasurements = {
+  ...ALEX,
+  dateBoxMm: {
+    ...ALEX.dateBoxMm!,
+    fromRight: ALEX.dateBoxMm!.fromRight + 1,
+    baselineY: ALEX.dateBoxMm!.baselineY + 2,
+  },
+};
+
 const round = (value: number) => Math.round(value * 100) / 100;
 
 function textField(m: ChequeMeasurements, range: Range, sizePt: number, extra: Partial<TextField> = {}): TextField {
@@ -210,7 +220,7 @@ export function builtinTemplates(): ChequeTemplate[] {
     buildTemplate('tpl-ahly-platinum', BANK_AHLY, 'بلاتيني', AHLY_FINAL, 'unmeasured'),
     buildTemplate('tpl-alex-1', BANK_ALEX, 'نموذج ١ (خاص)', ALEX, 'approximate'),
     // نسخة مطابقة تماماً لقالب الإسكندرية.
-    buildTemplate('tpl-alex-personal', BANK_ALEX_PERSONAL, 'نموذج ١', ALEX, 'approximate'),
+    buildTemplate('tpl-alex-personal', BANK_ALEX_PERSONAL, 'نموذج ١', ALEX_PERSONAL, 'approximate'),
     buildTemplate('tpl-alex-2', BANK_ALEX, 'نموذج ٢', ALEX, 'unmeasured'),
   ];
 }

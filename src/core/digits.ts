@@ -87,13 +87,13 @@ export function formatProtectedAmount(
 ): string {
   switch (protection) {
     case 'slash': {
-      // زي الشيكات: ١٤٨٥٠٠/- من غير قروش، و١٤٨٥٠٠،٤٥ بالقروش.
+      // من غير علامة «/» لأنها ممكن تتعدل لرقم: ١٤٨٥٠٠،- من غير قروش، و١٤٨٥٠٠،٤٥ بالقروش.
       const digits = toArabicDigits(value);
       if (piasters > 0) {
         const tail = toArabicDigits(String(piasters).padStart(2, '0'));
         return signSide === 'right' ? `${digits}،${tail}` : `${tail}،${digits}`;
       }
-      return signSide === 'right' ? `${digits}/-` : `-/${digits}`;
+      return signSide === 'right' ? `${digits}،-` : `-،${digits}`;
     }
     case 'hash':
       return `#${formatMoney(value, piasters)}#`;

@@ -11,7 +11,7 @@ import { ColorPicker } from './ColorPicker';
 import { addCompany, COMPANY_COLORS } from './data';
 
 const PROTECTION_OPTIONS: { value: AmountProtection; label: string }[] = [
-  { value: 'slash', label: 'زي الشيكات: الرقم وبعده شرطة' },
+  { value: 'slash', label: 'زي الشيكات: الرقم وبعده فاصلة وشرطة' },
   { value: 'hash', label: 'بين علامتي #' },
   { value: 'star', label: 'بين علامات نجمة' },
 ];
