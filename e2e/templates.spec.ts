@@ -154,8 +154,8 @@ test('حفظ قالب جديد واختياره للشيك وللحساب', asyn
 test('مسح قالب محفوظ، والحساب اللي عليه بيرجع للقالب الجاهز', async ({ page }) => {
   await completeSetup(page);
   await page.goto('/templates');
-  // القوالب الجاهزة مالهاش زرار حذف
-  await expect(page.getByRole('button', { name: 'حذف' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'حذف' }).first()).toBeVisible();
+  const builtinCount = await page.getByRole('button', { name: 'حذف' }).count();
 
   await page.goto('/templates/tpl-ahly-qr');
   await page.getByRole('button', { name: 'حفظ كقالب جديد' }).click();
@@ -167,17 +167,48 @@ test('مسح قالب محفوظ، والحساب اللي عليه بيرجع �
   await page.getByLabel('قالب الطباعة للشيكات الجديدة').selectOption({ label: 'قالب للمسح' });
 
   await page.goto('/templates');
-  await page.getByRole('button', { name: 'حذف' }).click();
+  const row = page.getByRole('listitem').filter({ hasText: 'قالب للمسح' });
+  await row.getByRole('button', { name: 'حذف' }).click();
   await expect(page.getByText(/١ حساب و٠ مسودة عليه/)).toBeVisible();
   await page.getByRole('button', { name: 'إلغاء' }).click();
   await expect(page.getByRole('link', { name: /قالب للمسح/ })).toBeVisible();
 
-  await page.getByRole('button', { name: 'حذف' }).click();
+  await row.getByRole('button', { name: 'حذف' }).click();
   await page.getByRole('button', { name: 'امسح القالب' }).click();
+  expect(builtinCount).toBeGreaterThan(0);
   await expect(page.getByRole('link', { name: /قالب للمسح/ })).toHaveCount(0);
 
   await page.goto('/accounts');
   await expect(page.getByLabel('قالب الطباعة للشيكات الجديدة').locator('option:checked')).toHaveText('الحالي (برمز مربع)');
   await page.goto('/cheque');
   await expect(page.getByRole('img', { name: 'معاينة الشيك' })).toBeVisible();
+});
+
+test('مسح قالب جاهز بيفضل ممسوح، وبيرجع بالاسترجاع', async ({ page }) => {
+  await completeSetup(page);
+  await page.goto('/templates');
+  const old = page.getByRole('listitem').filter({ hasText: /^قديم/ });
+  await expect(old).toHaveCount(1);
+  await old.getByRole('button', { name: 'حذف' }).click();
+  await expect(page.getByText(/ده قالب جاهز/)).toBeVisible();
+  await page.getByRole('button', { name: 'امسح القالب' }).click();
+  await expect(page.getByRole('link', { name: /^قديم/ })).toHaveCount(0);
+
+  // التطبيق ما يرجّعهوش لوحده بعد إعادة الفتح
+  await page.reload();
+  await expect(page.getByRole('link', { name: /^قديم/ })).toHaveCount(0);
+
+  // القالب المستخدم في الحساب بيتمسح والحساب بينتقل لقالب تاني للبنك
+  const current = page.getByRole('listitem').filter({ hasText: /^الحالي \(برمز مربع\)/ });
+  await current.getByRole('button', { name: 'حذف' }).click();
+  await page.getByRole('button', { name: 'امسح القالب' }).click();
+  await expect(page.getByRole('link', { name: /^الحالي \(برمز مربع\)/ })).toHaveCount(0);
+  await page.goto('/accounts');
+  await expect(page.getByLabel('قالب الطباعة للشيكات الجديدة').locator('option:checked')).not.toHaveText('الحالي (برمز مربع)');
+
+  await page.goto('/templates');
+  await page.getByRole('button', { name: /استرجاع القوالب الجاهزة/ }).click();
+  await expect(page.getByRole('link', { name: /^قديم/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: /^الحالي \(برمز مربع\)/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /استرجاع القوالب الجاهزة/ })).toHaveCount(0);
 });

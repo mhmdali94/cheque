@@ -5,9 +5,11 @@ import { toArabicDigits } from '@/core/digits';
 import { ACCURACY_LABEL } from '@/core/templates';
 import type { ChequeTemplate } from '@/core/types';
 import { orderedTemplates } from '@/features/companies/data';
+import { db } from '@/db/schema';
+import { HIDDEN_BUILTINS_KEY } from '@/db/seed';
 import { Button, Notice, PageHeader, TextInput } from '@/ui/controls';
 import { QrPanel } from '@/features/backup/QrPanel';
-import { createTemplateFor, duplicateTemplate, exportTemplate, importTemplateFile, deleteTemplate, templateUsage, type TemplateUsage } from './data';
+import { createTemplateFor, duplicateTemplate, exportTemplate, importTemplateFile, deleteTemplate, templateUsage, type TemplateUsage, restoreBuiltinTemplates } from './data';
 
 export function TemplatesPage() {
   const templates = useLiveQuery(() => orderedTemplates(), []);
@@ -18,6 +20,7 @@ export function TemplatesPage() {
   const [newModel, setNewModel] = useState('');
   const [addError, setAddError] = useState('');
   const [qr, setQr] = useState<ChequeTemplate | null>(null);
+  const hiddenCount = useLiveQuery(() => db.settings.get(HIDDEN_BUILTINS_KEY).then((e) => ((e?.value as string[] | undefined) ?? []).length), []) ?? 0;
   const [confirming, setConfirming] = useState<{ template: ChequeTemplate; usage: TemplateUsage } | null>(null);
 
   const askDelete = async (template: ChequeTemplate) => {
@@ -62,6 +65,7 @@ export function TemplatesPage() {
   return (
     <>
       <PageHeader title="قوالب الشيكات" description="أماكن الكلام على كل نموذج شيك. افتح القالب عشان تحرك أي حقل.">
+        {hiddenCount > 0 && <Button onClick={() => void restoreBuiltinTemplates()}>استرجاع القوالب الجاهزة ({toArabicDigits(hiddenCount)})</Button>}
         <Link className="flex min-h-11 items-center font-semibold text-accent underline" to="/templates/compare">قارن شيكك بالنماذج</Link>
         <Button onClick={() => fileRef.current?.click()}>استيراد قالب</Button>
         <input ref={fileRef} type="file" accept=".json,application/json" className="sr-only" aria-label="ملف القالب" tabIndex={-1} onChange={(e) => void importFile(e.target.files?.[0])} />
@@ -92,7 +96,7 @@ export function TemplatesPage() {
                   <Button variant="ghost" onClick={() => setQr(t)}>رمز</Button>
                   <Button variant="ghost" onClick={() => void exportTemplate(t)}>تصدير</Button>
                   <Button variant="ghost" onClick={() => void duplicateTemplate(t).then((copy) => navigate(`/templates/${copy.id}`))}>نسخة</Button>
-                  {!t.builtin && <Button variant="ghost" className="text-danger" onClick={() => void askDelete(t)}>حذف</Button>}
+                  <Button variant="ghost" className="text-danger" onClick={() => void askDelete(t)}>حذف</Button>
                   {confirming?.template.id === t.id && (
                     <div role="alert" className="flex w-full flex-col gap-2 rounded-md border border-danger bg-danger-tint p-3 text-sm">
                       <p className="font-semibold text-danger">
@@ -100,6 +104,7 @@ export function TemplatesPage() {
                         {(confirming.usage.accounts > 0 || confirming.usage.drafts > 0)
                           && ` ${toArabicDigits(confirming.usage.accounts)} حساب و${toArabicDigits(confirming.usage.drafts)} مسودة عليه، وهيرجعوا لقالب البنك الجاهز.`}
                         {' '}الشيكات المطبوعة مش هتتأثر.
+                        {t.builtin && ' ده قالب جاهز، وتقدر ترجّعه بعدين من «استرجاع القوالب الجاهزة».'}
                       </p>
                       <div className="flex gap-2">
                         <Button variant="danger" onClick={() => void confirmDelete(t)}>امسح القالب</Button>

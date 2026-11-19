@@ -37,9 +37,13 @@ const PERSONAL_TEMPLATE_ID = 'tpl-alex-personal';
 const PERSONAL_RESET_KEY = 'reset:tpl-alex-personal:1';
 
 /** يضيف الجاهز الناقص ويحدّث اللي المحاسب ما عدّلوش، ولا يكتب فوق أي قالب مضبوط. */
+/** القوالب الجاهزة اللي المحاسب مسحها، عشان التطبيق ما يرجّعهاش لوحده. */
+export const HIDDEN_BUILTINS_KEY = 'hiddenBuiltinTemplates';
+
 export async function ensureSeeded(database: ShikatyDB = db): Promise<void> {
   await database.transaction('rw', database.templates, database.printerProfiles, database.settings, async () => {
-    const templates = builtinTemplates();
+    const hidden = new Set(((await database.settings.get(HIDDEN_BUILTINS_KEY))?.value as string[] | undefined) ?? []);
+    const templates = builtinTemplates().filter((t) => !hidden.has(t.id));
     const personalReset = Boolean(await database.settings.get(PERSONAL_RESET_KEY));
     const existing = await database.templates.bulkGet(templates.map((t) => t.id));
     await database.templates.bulkPut(
