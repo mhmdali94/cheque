@@ -232,3 +232,28 @@ test('إعادة طباعة شيك مطبوع بأماكن القالب بعد �
   await option.uncheck();
   await expect.poll(inkTops).toBe(printedLayout);
 });
+
+test('التسطير بيوصل لملف الطباعة', async ({ page }) => {
+  await servePdfjs(page);
+  await completeSetup(page);
+  await writeCheque(page, 'شركة', '500');
+  await page.getByRole('button', { name: 'راجع واطبع' }).click();
+  await tickChecklist(page);
+  const plain = await captureOpenedPdf(page, () => page.getByRole('button', { name: 'اطبع على الشيك' }).click());
+  await page.getByRole('button', { name: 'رجوع' }).click();
+
+  await page.getByRole('link', { name: 'رجوع للتعديل' }).click();
+  await page.getByLabel('عبارة التسطير').selectOption('firstBeneficiary');
+  await page.getByLabel(/ارسم خطين التسطير/).check();
+  await page.waitForTimeout(500);
+  await page.getByRole('button', { name: 'راجع واطبع' }).click();
+  await tickChecklist(page);
+  const crossed = await captureOpenedPdf(page, () => page.getByRole('button', { name: 'اطبع على الشيك' }).click());
+
+  // منطقة التسطير على الأهلي: من الحافة اللي بتدخل الأول ٣٠ لـ ٦٠ مم
+  const region = { top: 30, bottom: 60 };
+  const before = await inkBounds(page, plain, region);
+  const after = await inkBounds(page, crossed, region);
+  console.log('crossing ink share', before.darkShare, '->', after.darkShare);
+  expect(after.darkShare).toBeGreaterThan(before.darkShare * 1.5);
+});

@@ -124,3 +124,16 @@ test.describe('منع التاريخ الفائت', () => {
     await expect(dayButton(page, '٩ نوفمبر')).not.toHaveAttribute('aria-disabled', 'true');
   });
 });
+
+test('التسطير ظاهر في النموذج وبيتحفظ للشيك الجاي', async ({ page }) => {
+  await completeSetup(page);
+  await writeCheque(page, 'شيك أول', '100');
+  await expect(page.getByRole('heading', { name: 'التسطير' })).toBeVisible();
+  await page.getByLabel('عبارة التسطير').selectOption('firstBeneficiary');
+  await page.getByLabel(/ارسم خطين التسطير/).check();
+  await page.waitForTimeout(500);
+  await page.goto('/cheque');
+  await page.getByRole('combobox', { name: 'المستفيد' }).fill('شيك تاني');
+  await expect(page.getByLabel('عبارة التسطير')).toHaveValue('firstBeneficiary');
+  await expect(page.getByLabel(/ارسم خطين التسطير/)).toBeChecked();
+});

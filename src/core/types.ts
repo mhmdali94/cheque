@@ -107,6 +107,8 @@ export interface Company {
   customPattern?: string;
   amountProtection: AmountProtection;
   amountLimit?: number;
+  /** آخر تسطير اختاره المحاسب للشركة، والشيكات الجديدة بتبدأ بيه. */
+  defaultCrossing?: CrossingValue;
   createdAt: number;
   updatedAt: number;
 }

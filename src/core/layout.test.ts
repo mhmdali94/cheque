@@ -229,6 +229,13 @@ describe('تخطيط الشيك', () => {
     expect(withPiasters.issues.filter((i) => i.kind === 'overflow' || i.kind === 'missingGlyph')).toEqual([]);
   });
 
+  it('لما المبلغ يكمّل على السطر التاني، مفيش شرطة في آخر السطر الأول', () => {
+    const { rules, texts: items } = texts(ahly, { amount: 69750 });
+    expect(items.some((t) => t.field === 'amountWords2')).toBe(true);
+    expect(rules.some((r) => r.field === 'amountWords1')).toBe(false);
+    expect(rules.some((r) => r.field === 'amountWords2')).toBe(true);
+  });
+
   it('«لا غير» و«جنيه مصري» لا يتفصلوا', () => {
     expect(tokenizeWords('فقط مائة جنيه مصري لا غير')).toEqual(['فقط', 'مائة', 'جنيه مصري', 'لا غير']);
   });

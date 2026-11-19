@@ -49,7 +49,7 @@ export function ComposePage() {
   // الإضافات تتفتح لوحدها لو الشيك المفتوح فيه حاجة منها.
   useEffect(() => {
     const current = chequeRef.current;
-    if (current) setExtrasOpen(Boolean(current.memo || current.crossing.kind !== 'none' || current.crossing.drawLines || current.printStub));
+    if (current) setExtrasOpen(Boolean(current.memo || current.printStub));
   }, [cheque?.id]);
   const locked = cheque !== null && cheque.status !== 'draft';
 
@@ -96,7 +96,7 @@ export function ComposePage() {
       replaceCheque({
         id: newId(), companyId: company.id, accountId: account.id, bookId: book.id,
         templateId: account.templateId, number, status: 'draft', payee: '', amount: null, amountInput: '',
-        date: todayIso(), memo: '', signatoryName: '', crossing: { kind: 'none', text: '', drawLines: false },
+        date: todayIso(), memo: '', signatoryName: '', crossing: company.defaultCrossing ?? { kind: 'none', text: '', drawLines: false },
         printStub: false, printCount: 0, createdAt: now, updatedAt: now,
       }, false);
     })();
@@ -125,6 +125,12 @@ export function ComposePage() {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, []);
+
+  /** التسطير بيتحفظ للشركة، فالشيك الجاي بيبدأ بنفس الاختيار. */
+  const updateCrossing = (crossing: Cheque['crossing']) => {
+    update({ crossing });
+    if (company) void db.companies.update(company.id, { defaultCrossing: crossing });
+  };
 
   const update = (patch: Partial<Cheque>) => {
     const current = chequeRef.current;
@@ -257,37 +263,41 @@ export function ComposePage() {
         </div>
       </section>
 
+      <section className="flex flex-col gap-4">
+        <h2 className={sectionTitle}><span className={sectionNumber}>٣</span>التسطير</h2>
+        <Select
+          label="عبارة التسطير" value={cheque.crossing.kind}
+          hint="بتتكتب بين خطي التسطير. اختيارك بيتحفظ للشيكات الجاية في الشركة دي."
+          onChange={(kind) => updateCrossing({ ...cheque.crossing, kind: kind as CrossingKind })}
+        >
+          {CROSSING_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+        </Select>
+        {needsText && (
+          <TextInput
+            label={cheque.crossing.kind === 'special' ? 'اسم البنك' : 'العبارة'} value={cheque.crossing.text}
+            hint={cheque.crossing.kind === 'special' ? 'البنك الوحيد اللي ينفع الشيك يتصرف عن طريقه.' : 'مثلاً: لا يصرف إلا من خلال العميل.'}
+            onChange={(text) => updateCrossing({ ...cheque.crossing, text })}
+          />
+        )}
+        <label className="flex min-h-11 items-center gap-2 text-sm">
+          <input
+            type="checkbox" className="size-5 accent-[var(--accent)]" checked={cheque.crossing.drawLines}
+            onChange={(e) => updateCrossing({ ...cheque.crossing, drawLines: e.target.checked })}
+          />
+          ارسم خطين التسطير (لو الشيك مفيهوش خطين مطبوعين)
+        </label>
+      </section>
+
       <details className="group" open={extrasOpen} onToggle={(e) => setExtrasOpen(e.currentTarget.open)}>
-        <summary className={`${sectionTitle} min-h-11 mb-0`}><span className={sectionNumber}>٣</span>إضافات اختيارية: البيان والتسطير<span aria-hidden className="ms-auto text-lg text-ink-soft transition-transform duration-150 group-open:rotate-45">+</span></summary>
+        <summary className={`${sectionTitle} min-h-11 mb-0`}><span className={sectionNumber}>٤</span>إضافات اختيارية: البيان<span aria-hidden className="ms-auto text-lg text-ink-soft transition-transform duration-150 group-open:rotate-45">+</span></summary>
         <div className="mt-3 flex flex-col gap-4">
           <TextInput label="البيان" value={cheque.memo} onChange={(memo) => update({ memo })} hint="سبب الدفع، للرجوع إليه في السجل. مثلاً: إيجار شهر مارس. عادةً مش بيتطبع على الشيك." />
-          <Select
-            label="عبارة التسطير" value={cheque.crossing.kind}
-            hint="بتتكتب بين خطي التسطير المطبوعين على الشيك. لو مش متأكد سيبها بدون عبارة."
-            onChange={(kind) => update({ crossing: { ...cheque.crossing, kind: kind as CrossingKind } })}
-          >
-            {CROSSING_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-          </Select>
-          {needsText && (
-            <TextInput
-              label={cheque.crossing.kind === 'special' ? 'اسم البنك' : 'العبارة'} value={cheque.crossing.text}
-              hint={cheque.crossing.kind === 'special' ? 'البنك الوحيد اللي ينفع الشيك يتصرف عن طريقه.' : 'مثلاً: لا يصرف إلا من خلال العميل.'}
-              onChange={(text) => update({ crossing: { ...cheque.crossing, text } })}
-            />
-          )}
           {view.template?.stub.enabled && (
             <label className="flex min-h-11 items-center gap-2 text-sm">
               <input type="checkbox" className="size-5 accent-[var(--accent)]" checked={cheque.printStub} onChange={(e) => update({ printStub: e.target.checked })} />
               اطبع بيانات مختصرة على الكعب
             </label>
           )}
-          <label className="flex min-h-11 items-center gap-2 text-sm">
-            <input
-              type="checkbox" className="size-5 accent-[var(--accent)]" checked={cheque.crossing.drawLines}
-              onChange={(e) => update({ crossing: { ...cheque.crossing, drawLines: e.target.checked } })}
-            />
-            ارسم خطين تسطير إضافيين (للشيكات اللي مفيهاش تسطير مطبوع)
-          </label>
         </div>
       </details>
     </fieldset>

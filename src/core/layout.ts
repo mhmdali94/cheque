@@ -214,7 +214,8 @@ function layoutAmountWords(builder: Builder, template: ChequeTemplate, text: str
   };
 
   const first = builder.place(lines[0], line1, 'amountWords1', 'rtl', size);
-  addFill(line1, 'amountWords1', first.x);
+  // لو الكلام مكمّل على السطر التاني، آخر السطر الأول بيفضل من غير شرطة.
+  if (!lines[1]) addFill(line1, 'amountWords1', first.x);
   if (lines[1]) {
     const second = builder.place(lines[1], line2, 'amountWords2', 'rtl', size);
     addFill(line2, 'amountWords2', second.x);
