@@ -7,7 +7,7 @@ import type { ChequeTemplate } from '@/core/types';
 import { orderedTemplates } from '@/features/companies/data';
 import { Button, Notice, PageHeader, TextInput } from '@/ui/controls';
 import { QrPanel } from '@/features/backup/QrPanel';
-import { createTemplateFor, duplicateTemplate, exportTemplate, importTemplateFile } from './data';
+import { createTemplateFor, duplicateTemplate, exportTemplate, importTemplateFile, deleteTemplate, templateUsage, type TemplateUsage } from './data';
 
 export function TemplatesPage() {
   const templates = useLiveQuery(() => orderedTemplates(), []);
@@ -18,6 +18,22 @@ export function TemplatesPage() {
   const [newModel, setNewModel] = useState('');
   const [addError, setAddError] = useState('');
   const [qr, setQr] = useState<ChequeTemplate | null>(null);
+  const [confirming, setConfirming] = useState<{ template: ChequeTemplate; usage: TemplateUsage } | null>(null);
+
+  const askDelete = async (template: ChequeTemplate) => {
+    setError('');
+    setConfirming({ template, usage: await templateUsage(template.id) });
+  };
+
+  const confirmDelete = async (template: ChequeTemplate) => {
+    try {
+      await deleteTemplate(template);
+      setConfirming(null);
+    } catch (e) {
+      setConfirming(null);
+      setError((e as Error).message);
+    }
+  };
   const qrItem = useMemo(() => (qr ? { kind: 'template' as const, template: qr } : null), [qr]);
 
   const addTemplate = async (event: FormEvent) => {
@@ -76,6 +92,21 @@ export function TemplatesPage() {
                   <Button variant="ghost" onClick={() => setQr(t)}>رمز</Button>
                   <Button variant="ghost" onClick={() => void exportTemplate(t)}>تصدير</Button>
                   <Button variant="ghost" onClick={() => void duplicateTemplate(t).then((copy) => navigate(`/templates/${copy.id}`))}>نسخة</Button>
+                  {!t.builtin && <Button variant="ghost" className="text-danger" onClick={() => void askDelete(t)}>حذف</Button>}
+                  {confirming?.template.id === t.id && (
+                    <div role="alert" className="flex w-full flex-col gap-2 rounded-md border border-danger bg-danger-tint p-3 text-sm">
+                      <p className="font-semibold text-danger">
+                        هيتمسح القالب «{t.modelName}» نهائياً.
+                        {(confirming.usage.accounts > 0 || confirming.usage.drafts > 0)
+                          && ` ${toArabicDigits(confirming.usage.accounts)} حساب و${toArabicDigits(confirming.usage.drafts)} مسودة عليه، وهيرجعوا لقالب البنك الجاهز.`}
+                        {' '}الشيكات المطبوعة مش هتتأثر.
+                      </p>
+                      <div className="flex gap-2">
+                        <Button variant="danger" onClick={() => void confirmDelete(t)}>امسح القالب</Button>
+                        <Button variant="ghost" onClick={() => setConfirming(null)}>إلغاء</Button>
+                      </div>
+                    </div>
+                  )}
                 </li>
               ))}
             </ul>

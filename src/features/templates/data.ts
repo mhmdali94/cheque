@@ -62,3 +62,43 @@ export async function importTemplateFile(raw: string): Promise<ChequeTemplate> {
   });
   return template;
 }
+
+export interface TemplateUsage {
+  accounts: number;
+  drafts: number;
+}
+
+export async function templateUsage(templateId: string): Promise<TemplateUsage> {
+  const [accounts, cheques] = await Promise.all([
+    db.accounts.toArray().then((rows) => rows.filter((a) => a.templateId === templateId).length),
+    db.cheques.where('status').equals('draft').toArray().then((rows) => rows.filter((c) => c.templateId === templateId).length),
+  ]);
+  return { accounts, drafts: cheques };
+}
+
+/**
+ * يمسح قالب عمله المحاسب. القوالب الجاهزة مش بتتمسح لأن التطبيق بيرجّعها.
+ * الحسابات والمسودات اللي عليه بترجع لقالب البنك الجاهز، والشيكات المطبوعة محتفظة بأماكنها.
+ */
+export async function deleteTemplate(template: ChequeTemplate): Promise<void> {
+  if (template.builtin) throw new Error('القوالب الجاهزة مش بتتمسح. استخدم «ارجع للأماكن الأصلية».');
+  const replacement = builtinTemplates().find((t) => t.bankName === template.bankName && t.accuracy !== 'unmeasured')
+    ?? builtinTemplates().find((t) => t.bankName === template.bankName);
+  const usage = await templateUsage(template.id);
+  if (!replacement && (usage.accounts > 0 || usage.drafts > 0)) {
+    throw new Error('القالب ده مستخدم في حساب أو مسودة، ومفيش قالب جاهز للبنك ده يرجعوا له. غيّر قالبهم الأول.');
+  }
+
+  await db.transaction('rw', db.templates, db.accounts, db.cheques, db.images, async () => {
+    if (replacement) {
+      const now = Date.now();
+      await db.accounts.filter((a) => a.templateId === template.id).modify({ templateId: replacement.id, updatedAt: now });
+      await db.cheques.filter((c) => c.status === 'draft' && c.templateId === template.id).modify({ templateId: replacement.id, updatedAt: now });
+    }
+    await db.templates.delete(template.id);
+    if (template.imageId) {
+      const stillUsed = await db.templates.filter((t) => t.imageId === template.imageId).count();
+      if (stillUsed === 0) await db.images.delete(template.imageId);
+    }
+  });
+}

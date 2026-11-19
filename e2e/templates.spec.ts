@@ -150,3 +150,34 @@ test('حفظ قالب جديد واختياره للشيك وللحساب', asyn
   await page.getByRole('button', { name: 'محفوظ' }).click();
   await expect(page.getByText('اتحفظت التعديلات.', { exact: false })).toBeVisible();
 });
+
+test('مسح قالب محفوظ، والحساب اللي عليه بيرجع للقالب الجاهز', async ({ page }) => {
+  await completeSetup(page);
+  await page.goto('/templates');
+  // القوالب الجاهزة مالهاش زرار حذف
+  await expect(page.getByRole('button', { name: 'حذف' })).toHaveCount(0);
+
+  await page.goto('/templates/tpl-ahly-qr');
+  await page.getByRole('button', { name: 'حفظ كقالب جديد' }).click();
+  await page.getByLabel('اسم القالب الجديد').fill('قالب للمسح');
+  await page.getByRole('button', { name: 'حفظ', exact: true }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('قالب للمسح');
+
+  await page.goto('/accounts');
+  await page.getByLabel('قالب الطباعة للشيكات الجديدة').selectOption({ label: 'قالب للمسح' });
+
+  await page.goto('/templates');
+  await page.getByRole('button', { name: 'حذف' }).click();
+  await expect(page.getByText(/١ حساب و٠ مسودة عليه/)).toBeVisible();
+  await page.getByRole('button', { name: 'إلغاء' }).click();
+  await expect(page.getByRole('link', { name: /قالب للمسح/ })).toBeVisible();
+
+  await page.getByRole('button', { name: 'حذف' }).click();
+  await page.getByRole('button', { name: 'امسح القالب' }).click();
+  await expect(page.getByRole('link', { name: /قالب للمسح/ })).toHaveCount(0);
+
+  await page.goto('/accounts');
+  await expect(page.getByLabel('قالب الطباعة للشيكات الجديدة').locator('option:checked')).toHaveText('الحالي (برمز مربع)');
+  await page.goto('/cheque');
+  await expect(page.getByRole('img', { name: 'معاينة الشيك' })).toBeVisible();
+});
