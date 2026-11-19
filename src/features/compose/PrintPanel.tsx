@@ -37,6 +37,9 @@ export function PrintPanel({ cheque, view }: { cheque: Cheque; view: ChequeView 
   const [skipTrial, setSkipTrial] = useState(false);
   const [confirmReprint, setConfirmReprint] = useState(false);
   const [stage, setStage] = useState<Stage>('ready');
+  const [frameMode, setFrameMode] = useState(false);
+  const [framePdf, setFramePdf] = useState<Blob | null>(null);
+  const [frameSent, setFrameSent] = useState(false);
   const [blockedPopup, setBlockedPopup] = useState(false);
   const [reviewBusy, setReviewBusy] = useState(false);
 
@@ -56,6 +59,18 @@ export function PrintPanel({ cheque, view }: { cheque: Cheque; view: ChequeView 
     );
     return () => { alive = false; };
   }, [model, setup, shaper, renderer]);
+
+  // تجربة الإطار دايماً على صفحة A4 كاملة، بنفس مكان الشيك في الدرج.
+  useEffect(() => {
+    if (!frameMode || !model || !template || !profile || !shaper) return;
+    let alive = true;
+    const a4 = buildPageSetup(template.lengthMm, template.widthMm, { ...profile, pageMode: 'a4' }, calibration);
+    createChequePdf({ model, setup: a4, shaper, renderer, frame: { lengthMm: template.lengthMm, widthMm: template.widthMm } }).then(
+      (bytes) => { if (alive) setFramePdf(toPdfBlob(bytes)); },
+      () => { if (alive) setFailed(true); },
+    );
+    return () => { alive = false; };
+  }, [frameMode, model, template, profile, calibration, shaper, renderer]);
 
   const trialDone = useLiveQuery(
     () => (profile && template ? db.settings.get(trialKey(profile.id, template.id)).then((e) => Boolean(e?.value)) : false),
@@ -89,6 +104,12 @@ export function PrintPanel({ cheque, view }: { cheque: Cheque; view: ChequeView 
     && (blocking.length === 0 || confirmBlocking)
     && (Boolean(trialDone) || skipTrial)
     && (!isReprint || confirmReprint);
+
+  const sendFrame = async () => {
+    if (!framePdf) return;
+    const result = await deliverPdf(framePdf, `تجربة إطار ${toArabicDigits(numberLabel ?? '')}.pdf`);
+    if (result !== 'cancelled') setFrameSent(true);
+  };
 
   const send = async () => {
     if (!pdf) return;
@@ -171,7 +192,23 @@ export function PrintPanel({ cheque, view }: { cheque: Cheque; view: ChequeView 
         </Notice>
       )}
 
-      {!isClosed && (
+      <label className="flex min-h-11 items-center gap-2 rounded-md border border-rule-strong bg-surface px-3 text-sm font-semibold">
+        <input type="checkbox" className={checkbox} checked={frameMode} onChange={(e) => { setFrameMode(e.target.checked); setFrameSent(false); }} />
+        تجربة على ورقة طباعة عادية بإطار الشيك (الشيك مش هيتسجل مطبوع)
+      </label>
+
+      {frameMode && (
+        <div className="flex flex-col gap-3">
+          <Notice tone="info">
+            اطبعها على ورقة طباعة عادية من الدرج العادي. بعد الطباعة حط الشيك الأصلي جوه الإطار بالظبط وبص قدام النور: الكلام لازم يقع في مكانه.
+            لما تتأكد، شيل علامة التجربة واطبع على الشيك.
+          </Notice>
+          {frameSent && <Notice tone="info">اتبعتت التجربة. الشيك لسه مسودة زي ما هو.</Notice>}
+          <Button variant="primary" className="w-full lg:w-auto" disabled={!framePdf} onClick={() => void sendFrame()}>اطبع التجربة على ورقة عادية</Button>
+        </div>
+      )}
+
+      {!isClosed && !frameMode && (
         <>
           <fieldset className="flex flex-col gap-1">
             <legend className="mb-1 font-bold">قبل الطباعة</legend>

@@ -257,3 +257,25 @@ test('التسطير بيوصل لملف الطباعة', async ({ page }) => {
   console.log('crossing ink share', before.darkShare, '->', after.darkShare);
   expect(after.darkShare).toBeGreaterThan(before.darkShare * 1.5);
 });
+
+test('تجربة الإطار على A4: الإطار في مكان الشيك، والشيك يفضل مسودة', async ({ page }) => {
+  await servePdfjs(page);
+  await completeSetup(page);
+  await writeCheque(page);
+  await page.getByRole('button', { name: 'راجع واطبع' }).click();
+  await page.getByLabel(/تجربة على ورقة طباعة عادية بإطار الشيك/).check();
+  await expect(page.getByRole('button', { name: 'اطبع على الشيك' })).toHaveCount(0);
+
+  const bytes = await captureOpenedPdf(page, () => page.getByRole('button', { name: 'اطبع التجربة على ورقة عادية' }).click());
+  const doc = await PDFDocument.load(bytes);
+  expect(Math.abs(doc.getPage(0).getSize().width * PT_TO_MM - 210)).toBeLessThan(0.1);
+  // حواف الإطار عند حواف الشيك في الدرج: من ٦٣ لـ ١٤٧ مم بالعرض
+  const ink = await inkBounds(page, bytes, { top: 20, bottom: 160 });
+  expect(Math.abs(ink.minX - 63)).toBeLessThan(1);
+  expect(Math.abs(ink.maxX - 147)).toBeLessThan(1);
+
+  await expect(page.getByText('اتبعتت التجربة. الشيك لسه مسودة زي ما هو.')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'هل طُبع الشيك سليم؟' })).toHaveCount(0);
+  await page.getByLabel(/تجربة على ورقة طباعة عادية بإطار الشيك/).uncheck();
+  await expect(page.getByRole('button', { name: 'اطبع على الشيك' })).toBeVisible();
+});

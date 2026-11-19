@@ -1,6 +1,6 @@
 /** ملف PDF للطباعة على أصل الشيك: الكلام فقط، بالأسود، في مكانه بالمليمتر. */
 import { PDFDocument } from 'pdf-lib';
-import { compose, rotationAround, translation, type Matrix, type PageSetup } from '@/core/geometry';
+import { compose, rotationAround, translation, type Matrix, type PageSetup, applyMatrix } from '@/core/geometry';
 import type { PrintModel, PrintText } from '@/core/layout';
 import { PdfSheet } from './pdfCanvas';
 import type { Shaper } from './shaper';
@@ -62,11 +62,37 @@ export interface ChequePdfInput {
   setup: PageSetup;
   shaper: Shaper;
   renderer?: PdfRenderer;
+  /** يرسم حدود الشيك عشان تجربة على ورق A4: الشيك بيتحط فوق الإطار ويتقارن. */
+  frame?: { lengthMm: number; widthMm: number };
 }
 
-export async function createChequePdf({ model, setup, shaper, renderer = 'vector' }: ChequePdfInput): Promise<Uint8Array> {
+const FRAME_LABEL = 'إطار الشيك: حط الشيك فوقه بالظبط وقارن الكلام';
+
+function drawFrame(sheet: PdfSheet, frame: NonNullable<ChequePdfInput['frame']>, setup: PageSetup, shaper: Shaper): void {
+  const { lengthMm: L, widthMm: W } = frame;
+  sheet.strokeRect(0, 0, L, W, 0.3, setup.matrix);
+  // علامات الأركان بره الإطار عشان تبان حتى لو الحبر خفيف
+  const tick = 4;
+  for (const [x, y, dx, dy] of [[0, 0, -1, -1], [L, 0, 1, -1], [L, W, 1, 1], [0, W, -1, 1]] as const) {
+    sheet.strokeLine(x, y, x + dx * tick, y, 0.3, setup.matrix);
+    sheet.strokeLine(x, y, x, y + dy * tick, 0.3, setup.matrix);
+  }
+
+  // التعليمات تحت الإطار على الصفحة نفسها لو فيه مكان
+  const corners = [[0, 0], [L, 0], [L, W], [0, W]].map(([x, y]) => applyMatrix(setup.matrix, x, y));
+  const bottom = Math.max(...corners.map(([, y]) => y));
+  const centerX = (Math.min(...corners.map(([x]) => x)) + Math.max(...corners.map(([x]) => x))) / 2;
+  if (bottom + 14 < setup.pageHeightMm) {
+    const request = { text: FRAME_LABEL, dir: 'rtl' as const, sizePt: 11, bold: true };
+    const width = shaper.measure(request);
+    sheet.fillOutline(shaper.outline(request).commands, translation(centerX - width / 2, bottom + 10));
+  }
+}
+
+export async function createChequePdf({ model, setup, shaper, renderer = 'vector', frame }: ChequePdfInput): Promise<Uint8Array> {
   const doc = await PDFDocument.create();
   const sheet = new PdfSheet(doc, setup.pageWidthMm, setup.pageHeightMm);
+  if (frame) drawFrame(sheet, frame, setup, shaper);
   if (renderer === 'canvas') await drawCanvasText(sheet, model, setup);
   else await drawVectorText(sheet, model, setup, shaper);
   for (const rule of model.rules) {
