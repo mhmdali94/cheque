@@ -285,3 +285,37 @@ test('الصفحة جاهزة لمحركات البحث والمشاركة', asy
   const image = await request.get('/og-image.jpg');
   expect(image.headers()['content-type']).toContain('image/jpeg');
 });
+
+test('تعديل ومسح دفتر الشيكات', async ({ page }) => {
+  await completeSetup(page);
+  await writeCheque(page, 'شيك على الدفتر', '100');
+  await page.waitForTimeout(500);
+  await page.goto('/accounts');
+  await expect(page.getByText(/من ١٠٠ إلى ١٢٤/)).toBeVisible();
+
+  // النطاق الجديد لازم يشمل الشيك رقم ١٠٠ المكتوب
+  await page.getByRole('button', { name: 'تعديل دفتر ١٠٠' }).click();
+  await page.getByLabel('أول رقم في الدفتر').fill('101');
+  await page.getByRole('button', { name: 'حفظ التعديل' }).click();
+  await expect(page.getByText(/برا النطاق الجديد/)).toBeVisible();
+  await page.getByLabel('أول رقم في الدفتر').fill('100');
+  await page.getByLabel('آخر رقم في الدفتر').fill('149');
+  await page.getByRole('button', { name: 'حفظ التعديل' }).click();
+  await expect(page.getByText(/من ١٠٠ إلى ١٤٩/)).toBeVisible();
+
+  // الدفتر اللي عليه شيكات مش بيتمسح
+  await page.getByRole('button', { name: 'حذف دفتر ١٠٠' }).click();
+  await page.getByRole('button', { name: 'امسح الدفتر' }).click();
+  await expect(page.getByText(/عليه ١ شيك، فمش ممكن يتمسح/)).toBeVisible();
+
+  // دفتر فاضي بيتمسح
+  await page.getByRole('button', { name: 'إضافة دفتر' }).click();
+  await page.getByLabel('أول رقم', { exact: true }).fill('500');
+  await page.getByLabel('آخر رقم', { exact: true }).fill('524');
+  await page.getByRole('button', { name: 'حفظ الدفتر' }).click();
+  await expect(page.getByText(/من ٥٠٠ إلى ٥٢٤/)).toBeVisible();
+  await page.getByRole('button', { name: 'حذف دفتر ٥٠٠' }).click();
+  await page.getByRole('button', { name: 'امسح الدفتر' }).click();
+  await expect(page.getByText(/من ٥٠٠ إلى ٥٢٤/)).toHaveCount(0);
+  expect(await visibleLatinText(page)).toEqual([]);
+});

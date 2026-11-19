@@ -7,20 +7,72 @@ import { remainingInBook } from '@/db/repos';
 import { db } from '@/db/schema';
 import { useCurrentCompany } from '@/state/useAppData';
 import { Button, DigitInput, EmptyState, PageHeader, Select } from '@/ui/controls';
-import { addBook, formatChequeNumber, orderedTemplates, parseBookRange } from './data';
+import { addBook, deleteBook, formatChequeNumber, orderedTemplates, parseBookRange, updateBook } from './data';
 
 const LOW_BOOK_THRESHOLD = 5;
 
 function BookRow({ book, remaining }: { book: ChequeBook; remaining: number }) {
+  const [editing, setEditing] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [from, setFrom] = useState('');
+  const [to, setTo] = useState('');
+  const [error, setError] = useState('');
+
   const total = book.toNumber - book.fromNumber + 1;
   const low = remaining <= LOW_BOOK_THRESHOLD;
   const used = Math.round(((total - remaining) / total) * 100);
+  const label = (n: number) => toArabicDigits(formatChequeNumber(n, book.numberWidth));
+
+  const startEdit = () => {
+    setFrom(formatChequeNumber(book.fromNumber, book.numberWidth));
+    setTo(formatChequeNumber(book.toNumber, book.numberWidth));
+    setError('');
+    setConfirmDelete(false);
+    setEditing(true);
+  };
+
+  const save = async (event: FormEvent) => {
+    event.preventDefault();
+    const range = parseBookRange(from, to, toLatinDigits);
+    if (!range.ok) { setError(range.error); return; }
+    try {
+      await updateBook(book, range.from, range.to, range.width);
+      setEditing(false);
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  };
+
+  const remove = async () => {
+    try {
+      await deleteBook(book);
+    } catch (e) {
+      setConfirmDelete(false);
+      setError((e as Error).message);
+    }
+  };
+
+  if (editing) {
+    return (
+      <li className="py-3">
+        <form onSubmit={(e) => void save(e)} className="flex flex-col gap-3" noValidate aria-label="تعديل الدفتر">
+          <div className="grid grid-cols-2 gap-3">
+            <DigitInput label="أول رقم في الدفتر" value={from} onChange={setFrom} error={error} autoFocus />
+            <DigitInput label="آخر رقم في الدفتر" value={to} onChange={setTo} />
+          </div>
+          <div className="flex gap-2">
+            <Button type="submit" variant="primary">حفظ التعديل</Button>
+            <Button variant="ghost" onClick={() => setEditing(false)}>إلغاء</Button>
+          </div>
+        </form>
+      </li>
+    );
+  }
+
   return (
     <li className="py-3">
       <div className="flex items-baseline justify-between gap-3">
-        <p className="font-semibold tabular-nums">
-          من {toArabicDigits(formatChequeNumber(book.fromNumber, book.numberWidth))} إلى {toArabicDigits(formatChequeNumber(book.toNumber, book.numberWidth))}
-        </p>
+        <p className="font-semibold tabular-nums">من {label(book.fromNumber)} إلى {label(book.toNumber)}</p>
         <p className={`shrink-0 text-sm ${low ? 'font-semibold text-warn' : 'text-ink-soft'}`}>
           {low ? 'قرب يخلص: ' : 'متبقي '}{formatNumber(remaining)} من {formatNumber(total)}
         </p>
@@ -28,6 +80,19 @@ function BookRow({ book, remaining }: { book: ChequeBook; remaining: number }) {
       <div aria-hidden className="mt-2 h-1.5 overflow-hidden rounded-full bg-sunken">
         <div className={`h-full rounded-full ${low ? 'bg-warn' : 'bg-accent'}`} style={{ width: `${used}%` }} />
       </div>
+      {error && <p role="alert" className="mt-2 text-sm font-semibold text-danger">{error}</p>}
+      {confirmDelete ? (
+        <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
+          <span className="font-semibold text-danger">هيتمسح الدفتر ده نهائياً.</span>
+          <Button variant="danger" onClick={() => void remove()}>امسح الدفتر</Button>
+          <Button variant="ghost" onClick={() => setConfirmDelete(false)}>إلغاء</Button>
+        </div>
+      ) : (
+        <div className="mt-1 flex gap-1">
+          <Button variant="ghost" onClick={startEdit} aria-label={`تعديل دفتر ${label(book.fromNumber)}`}>تعديل</Button>
+          <Button variant="ghost" className="text-danger" onClick={() => { setError(''); setConfirmDelete(true); }} aria-label={`حذف دفتر ${label(book.fromNumber)}`}>حذف</Button>
+        </div>
+      )}
     </li>
   );
 }

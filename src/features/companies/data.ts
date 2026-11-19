@@ -1,5 +1,6 @@
+import { toArabicDigits } from '@/core/digits';
 import type { BankAccount, ChequeBook, ChequeTemplate, Company } from '@/core/types';
-import { newId, setSetting } from '@/db/repos';
+import { newId, setSetting, usedNumbers } from '@/db/repos';
 import { db } from '@/db/schema';
 
 /** ألوان غامقة بما يكفي لنص فاتح فوقها، ومتباعدة عشان الشركات ما تتلخبطش. */
@@ -55,3 +56,20 @@ export function parseBookRange(fromInput: string, toInput: string, toLatin: (s: 
 }
 
 export const formatChequeNumber = (number: number, width: number) => String(number).padStart(width, '0');
+
+/** تعديل أرقام الدفتر، بشرط إن كل الشيكات المكتوبة عليه تفضل جوه النطاق الجديد. */
+export async function updateBook(book: ChequeBook, from: number, to: number, numberWidth: number): Promise<void> {
+  const used = [...(await usedNumbers(book.id))];
+  const outside = used.filter((n) => n < from || n > to);
+  if (outside.length > 0) {
+    throw new Error(`فيه ${toArabicDigits(outside.length)} شيك مكتوب على الدفتر ده بأرقام برا النطاق الجديد، فمش ممكن تغيّره كده.`);
+  }
+  await db.books.update(book.id, { fromNumber: from, toNumber: to, numberWidth, updatedAt: Date.now() });
+}
+
+/** مسح دفتر فاضي بس. الدفتر اللي عليه شيكات بيفضل عشان السجل. */
+export async function deleteBook(book: ChequeBook): Promise<void> {
+  const count = await db.cheques.where('bookId').equals(book.id).count();
+  if (count > 0) throw new Error(`الدفتر ده عليه ${toArabicDigits(count)} شيك، فمش ممكن يتمسح. السجل محتاجه.`);
+  await db.books.delete(book.id);
+}
